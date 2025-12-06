@@ -3,16 +3,31 @@ import { RetroBackground } from '../components/RetroBackground';
 import { RetroButton, NeonColors } from '../components/RetroUI';
 import dinoAsset from '../assets/dino.png';
 
-const pixelCactus = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect fill='%23f0f' x='14' y='4' width='4' height='28'/%3E%3Crect fill='%23f0f' x='18' y='10' width='4' height='4'/%3E%3Crect fill='%23f0f' x='10' y='18' width='4' height='4'/%3E%3C/svg%3E`;
-const pixelPtero = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect fill='%23f0f' x='8' y='12' width='16' height='8'/%3E%3Crect fill='%23f0f' x='0' y='8' width='8' height='4'/%3E%3Crect fill='%23f0f' x='24' y='8' width='8' height='4'/%3E%3Crect fill='%23000' x='15' y='13' width='2' height='2'/%3E%3C/svg%3E`;
+// Array of neon colors for sprite randomization
+const SPRITE_COLORS = ['00ff00', 'ff00ff', '00ffff', 'ffff00', 'ff0000'];
+
+// Function to generate sprite SVG with random color
+const generateCactusSVG = (color: string) => 
+  `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect fill='%23${color}' x='14' y='4' width='4' height='28'/%3E%3Crect fill='%23${color}' x='18' y='10' width='4' height='4'/%3E%3Crect fill='%23${color}' x='10' y='18' width='4' height='4'/%3E%3C/svg%3E`;
+
+const generatePteroSVG = (color: string) => 
+  `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect fill='%23${color}' x='8' y='12' width='16' height='8'/%3E%3Crect fill='%23${color}' x='0' y='8' width='8' height='4'/%3E%3Crect fill='%23${color}' x='24' y='8' width='8' height='4'/%3E%3Crect fill='%23000' x='15' y='13' width='2' height='2'/%3E%3C/svg%3E`;
+
+const getRandomColor = () => SPRITE_COLORS[Math.floor(Math.random() * SPRITE_COLORS.length)];
 
 const CANVAS_WIDTH = 1200;
 const CANVAS_HEIGHT = 600;
 const GROUND_Y = CANVAS_HEIGHT - 80;
 
-const DINO_SIZE = 150;
-const JUMP_VELOCITY = 20;
-const GRAVITY = 1;
+const DINO_SIZE = 100;
+const JUMP_VELOCITY = 15;
+const GRAVITY = 0.6;
+
+const CACTUS_HEIGHT = 80;
+const CACTUS_WIDTH = 60;
+
+const PTERO_HEIGHT = 80;
+const PTERO_WIDTH = 130;
 
 // --- TIPARE ---
 type ScoreRef = {
@@ -58,8 +73,6 @@ const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
 
     // Use the provided PNG asset for the dino graphic
     dinoImgRef.current.src = dinoAsset;
-    cactusImgRef.current.src = pixelCactus;
-    pteroImgRef.current.src = pixelPtero;
     ctx.imageSmoothingEnabled = false; 
 
     dinoYRef.current = GROUND_Y - DINO_SIZE;
@@ -78,7 +91,10 @@ const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
     let obstacleTimer = 0;
     let obstacleInterval = 90; 
     
-    let obstacles: { x: number, y: number, w: number, h: number, type: 'cactus' | 'ptero' }[] = [];
+    // Array of neon colors for randomization
+    const spriteColors = [NeonColors.PINK, NeonColors.CYAN, NeonColors.GREEN, NeonColors.YELLOW, NeonColors.RED];
+    
+    let obstacles: { x: number, y: number, w: number, h: number, type: 'cactus' | 'ptero', color: string, spriteSrc: string }[] = [];
 
     const jump = () => {
       if (isJumpingRef.current || !gameRunningRef.current) return;
@@ -149,15 +165,18 @@ const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
         obstacleInterval = minDelay + Math.random() * (currentMaxInterval - minDelay);
         
         const type = Math.random() > 0.7 ? 'ptero' : 'cactus';
-        let h, w, y;
+        const spriteColor = getRandomColor();
+        let h, w, y, spriteSrc;
 
            if (type === 'cactus') {
-             w = 60; h = 100; y = GROUND_Y - h;
+             w = CACTUS_WIDTH; h = CACTUS_HEIGHT; y = GROUND_Y - h;
+             spriteSrc = generateCactusSVG(spriteColor);
            } else {
-             w = 80; h = 60; y = GROUND_Y - h - (DINO_SIZE + 20);
+             w = PTERO_WIDTH; h = PTERO_HEIGHT; y = GROUND_Y - h - (DINO_SIZE + 20);
+             spriteSrc = generatePteroSVG(spriteColor);
            }
         
-        obstacles.push({ x: CANVAS_WIDTH, y: y, w: w, h: h, type: type });
+        obstacles.push({ x: CANVAS_WIDTH, y: y, w: w, h: h, type: type, color: spriteColor, spriteSrc: spriteSrc });
         obstacleTimer = 0;
       }
       
@@ -166,9 +185,14 @@ const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
         const obs = obstacles[i];
         obs.x -= currentObstacleSpeed; // APLICĂ VITEZA DINAMICĂ
 
-        // Desenare sprite
-        const img = obs.type === 'cactus' ? cactusImgRef.current : pteroImgRef.current;
-        drawGlowingSprite(img, obs.x, obs.y, obs.w, obs.h, NeonColors.PINK, 15);
+        // Create or get image for this sprite
+        if (!('img' in obs)) {
+          const img = new Image();
+          img.src = obs.spriteSrc;
+          (obs as any).img = img;
+        }
+        const img = (obs as any).img;
+        drawGlowingSprite(img, obs.x, obs.y, obs.w, obs.h, obs.color, 15);
 
         // Curăță obstacolele ieșite din ecran
         if (obs.x + obs.w < 0) {
@@ -183,12 +207,17 @@ const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
         }
 
         // 5. Verificare Coliziune
-        const dinoX = 50; 
+        const dinoX = 20; 
         const dinoY = dinoYRef.current;
+        
+        // Add collision padding for smoother gameplay
+        const COLLISION_PADDING = 5;
 
         if (
-          dinoX < obs.x + obs.w && dinoX + DINO_SIZE > obs.x &&
-          dinoY < obs.y + obs.h && dinoY + DINO_SIZE > obs.y
+          dinoX + COLLISION_PADDING < obs.x + obs.w && 
+          dinoX + DINO_SIZE - COLLISION_PADDING > obs.x &&
+          dinoY + COLLISION_PADDING < obs.y + obs.h && 
+          dinoY + DINO_SIZE - COLLISION_PADDING > obs.y
         ) {
           endGame();
           return;
@@ -213,15 +242,13 @@ const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
 
     animationId = requestAnimationFrame(loop);
 
-    // Curățare la demontare
     return () => {
       gameRunningRef.current = false;
       window.removeEventListener('keydown', handleKeyDown);
       cancelAnimationFrame(animationId);
     };
-  }, [activeScoreRef, externalScoreRef, onScoreUpdate]); // Dependențe
+  }, [activeScoreRef, externalScoreRef, onScoreUpdate]);
 
-  // Stiluri UI (Rămân la fel)
   const uiBarStyle: React.CSSProperties = {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     width: `${CANVAS_WIDTH}px`, margin: '0 auto 20px auto',
@@ -239,7 +266,7 @@ const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
         <div style={uiBarStyle}>
           <h3 style={{ margin: 0, textShadow: `0 0 10px ${NeonColors.GREEN}` }}>DINO SCORE: {uiScore}</h3>
           <RetroButton variant="green" onClick={onExit} style={{ width: 'auto', marginTop: 0, padding: '10px 20px' }}>
-            IEȘIRE
+            EXIT
           </RetroButton>
         </div>
 
