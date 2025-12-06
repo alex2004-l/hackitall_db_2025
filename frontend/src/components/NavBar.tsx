@@ -1,11 +1,22 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { signOut } from 'firebase/auth';
+import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../firebaseClient';
 import { NeonColors } from './RetroUI';
 
 const NavBar: React.FC = () => {
   const navigate = useNavigate();
+  const [isGuest, setIsGuest] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setIsGuest(user.isAnonymous);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -16,24 +27,24 @@ const NavBar: React.FC = () => {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: '15px 30px',
+    padding: '22px 45px',
     backgroundColor: '#020205',
-    borderBottom: `3px solid ${NeonColors.CYAN}`,
-    boxShadow: `0 0 10px ${NeonColors.CYAN}`,
+    borderBottom: `4px solid ${NeonColors.CYAN}`,
+    boxShadow: `0 0 12px ${NeonColors.CYAN}`,
     fontFamily: '"Press Start 2P", monospace',
-    fontSize: '10px',
+    fontSize: '15px',
   };
 
   const buttonStyle = (color: string): React.CSSProperties => ({
-    padding: '8px 15px',
-    marginLeft: '15px',
+    padding: '12px 22px',
+    marginLeft: '22px',
     cursor: 'pointer',
     backgroundColor: 'transparent',
-    border: `2px solid ${color}`,
+    border: `3px solid ${color}`,
     color: color,
     fontFamily: '"Press Start 2P", monospace',
-    fontSize: '10px',
-    boxShadow: `0 0 8px ${color}`,
+    fontSize: '12px',
+    boxShadow: `0 0 10px ${color}`,
     transition: 'all 0.3s ease',
   });
 
@@ -51,12 +62,14 @@ const NavBar: React.FC = () => {
       </div>
 
       <div style={{ display: 'flex', gap: '20px' }}>
-        <div
-          onClick={() => navigate('/profile')}
-          style={buttonStyle(NeonColors.PINK)}
-        >
-          👤 PROFILE
-        </div>
+        {!isGuest && (
+          <div
+            onClick={() => navigate('/profile')}
+            style={buttonStyle(NeonColors.PINK)}
+          >
+            👤 PROFILE
+          </div>
+        )}
 
         <div
           onClick={() => navigate('/leaderboard')}

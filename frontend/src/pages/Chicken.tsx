@@ -309,7 +309,7 @@ const Game = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
           <div style={{ fontSize: '20px', color: NEON_PINK, textShadow: textGlow(NEON_PINK) }}>
             LIVES: {Array.from({ length: Math.max(0, uiLives) }).map((_, i) => <span key={i} style={{ marginLeft: '8px' }}>❤️</span>)}
           </div>
-          <button onClick={onExit} style={buttonStyle(NEON_CYAN)}>IEȘIRE</button>
+          <button onClick={onExit} style={buttonStyle(NEON_CYAN)}>EXIT</button>
         </div>
         
         {/* Container pentru Canvas și Efecte CRT */}

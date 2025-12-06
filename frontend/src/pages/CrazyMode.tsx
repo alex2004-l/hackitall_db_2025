@@ -110,7 +110,7 @@ const CrazyMode = ({ onModeEnd }: CrazyModeProps) => {
                     
                     <RetroTitle size="18px" color={NeonColors.RED}>🔥 CRAZY MODE 🔥</RetroTitle>
                     <p style={{ color: NeonColors.YELLOW, marginTop: '20px' }}>
-                        SCOR TOTAL:
+                            TOTAL SCORE:
                     </p>
                     <h1 style={{ color: NeonColors.CYAN, fontSize: '32px', textShadow: `0 0 15px ${NeonColors.CYAN}` }}>
                         {currentScore}
@@ -119,21 +119,21 @@ const CrazyMode = ({ onModeEnd }: CrazyModeProps) => {
                     <hr style={{ width: '80%', border: `1px dashed ${NeonColors.PINK}` }} />
                     
                     <p style={{ color: NeonColors.YELLOW, marginTop: '20px', marginBottom: '5px' }}>
-                        JOC CURENT:
+                            CURRENT GAME:
                     </p>
                     <h2 style={{ color: NeonColors.PINK, fontSize: '14px', marginBottom: '20px' }}>
                         {currentGameName}
                     </h2>
                     
                     <p style={{ color: NeonColors.YELLOW }}>
-                        TIMP RĂMAS:
+                            TIME LEFT:
                     </p>
                     <h1 style={{ color: timeLeft <= 5 ? NeonColors.RED : NeonColors.CYAN, fontSize: '40px', textShadow: '0 0 20px', marginBottom: '30px' }}>
                         {timeLeft}
                     </h1>
 
                     <RetroButton variant="red" onClick={() => navigate('/dashboard')} style={{ width: '100%', marginTop: 'auto' }}>
-                        IEȘIRE MOD
+                        EXIT MODE
                     </RetroButton>
 
                 </RetroCard>

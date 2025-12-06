@@ -58,13 +58,13 @@ function App() {
           game: "chicken_invaders",
           createdAt: serverTimestamp()
         });
-        alert("Scor salvat!");
+        alert("Score saved!");
         navigate("/dashboard");
       } catch (e) {
         console.error(e);
       }
     } else {
-      alert("Nu ești logat!");
+      alert("You are not logged in!");
       navigate("/login");
     }
   }, [navigate]);
@@ -83,7 +83,7 @@ function App() {
           game: "snake", // Specificăm jocul
           createdAt: serverTimestamp()
         });
-        alert("Scor Snake salvat!");
+        alert("Snake score saved!");
         navigate("/dashboard");
       } catch (e) {
         console.error(e);
@@ -105,7 +105,7 @@ function App() {
           game: "dino", // Specificăm jocul
           createdAt: serverTimestamp()
         });
-        alert("Scor Dino salvat!");
+        alert("Dino score saved!");
         navigate("/dashboard");
       } catch (e) {
         console.error(e);
@@ -126,7 +126,7 @@ function App() {
             lost_on: gameId,   // Jocul la care a pierdut
             createdAt: serverTimestamp()
         });
-        alert(`Crazy Mode Terminat! Scor Total: ${finalScore}`);
+        alert(`Crazy Mode finished! Total Score: ${finalScore}`);
         navigate("/dashboard");
     } else {
         navigate("/login");

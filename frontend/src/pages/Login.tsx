@@ -27,7 +27,7 @@ function Login() {
 
   // --- LOGICA DE AUTH (Neschimbată) ---
   const handleLogin = async () => {
-    if (!email || !password) { setMessage('Introduceți email și parola'); return; }
+    if (!email || !password) { setMessage('Please enter email and password'); return; }
     setLoading(true); setMessage('');
     try {
       await signInWithEmailAndPassword(auth, email, password);
@@ -37,11 +37,11 @@ function Login() {
   };
 
   const handleRegister = async () => {
-    if (!email || !password) { setMessage('Introduceți email și parola'); return; }
+    if (!email || !password) { setMessage('Please enter email and password'); return; }
     setLoading(true); setMessage('');
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-      setMessage("Cont creat! Se loghează...");
+      setMessage("Account created! Logging in...");
       await signInWithEmailAndPassword(auth, email, password);
       navigate('/dashboard');
     } catch (e: any) { setMessage(e.message); } 
@@ -136,8 +136,8 @@ function Login() {
             <p style={{ 
               marginTop: '20px', 
               fontSize: '10px', 
-              color: message.includes('creat') ? NeonColors.GREEN : NeonColors.RED,
-              textShadow: `0 0 5px ${message.includes('creat') ? NeonColors.GREEN : NeonColors.RED}`
+              color: message.includes('created') ? NeonColors.GREEN : NeonColors.RED,
+              textShadow: `0 0 5px ${message.includes('created') ? NeonColors.GREEN : NeonColors.RED}`
             }}>
               {message}
             </p>

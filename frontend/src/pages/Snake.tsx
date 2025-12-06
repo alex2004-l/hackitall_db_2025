@@ -209,7 +209,7 @@ const SnakeGame = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpda
         <div style={uiBarStyle}>
           <h3 style={{ margin: 0, textShadow: `0 0 10px ${NeonColors.GREEN}` }}>SNAKE SCORE: {uiScore}</h3>
           <RetroButton variant="green" onClick={onExit} style={{ width: 'auto', marginTop: 0, padding: '10px 20px' }}>
-            IEȘIRE
+            EXIT
           </RetroButton>
         </div>
 

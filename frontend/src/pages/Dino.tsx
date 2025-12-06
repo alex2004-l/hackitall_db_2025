@@ -1,19 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { RetroBackground } from '../components/RetroBackground';
 import { RetroButton, NeonColors } from '../components/RetroUI';
+import dinoAsset from '../assets/dino.png';
 
-// --- DEFINIȚII SPRITE-URI (Revenire la forme blocky) ---
-const pixelDino = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3C!-- Body/Neck --%3E%3Crect fill='%230f0' x='12' y='12' width='12' height='8'/%3E%3Crect fill='%230f0' x='24' y='16' width='4' height='4'/%3E%3C!-- Head/Snout --%3E%3Crect fill='%230f0' x='16' y='8' width='8' height='4'/%3E%3C!-- Legs --%3E%3Crect fill='%230f0' x='16' y='20' width='4' height='8'/%3E%3Crect fill='%230f0' x='20' y='24' width='4' height='4'/%3E%3C!-- Eye --%3E%3Crect fill='%23000' x='20' y='10' width='2' height='2'/%3E%3C/svg%3E`;
 const pixelCactus = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect fill='%23f0f' x='14' y='4' width='4' height='28'/%3E%3Crect fill='%23f0f' x='18' y='10' width='4' height='4'/%3E%3Crect fill='%23f0f' x='10' y='18' width='4' height='4'/%3E%3C/svg%3E`;
 const pixelPtero = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect fill='%23f0f' x='8' y='12' width='16' height='8'/%3E%3Crect fill='%23f0f' x='0' y='8' width='8' height='4'/%3E%3Crect fill='%23f0f' x='24' y='8' width='8' height='4'/%3E%3Crect fill='%23000' x='15' y='13' width='2' height='2'/%3E%3C/svg%3E`;
 
-// Configurări Joc
-const CANVAS_WIDTH = 800;
-const CANVAS_HEIGHT = 400;
-const GROUND_Y = CANVAS_HEIGHT - 50;
-const DINO_SIZE = 45; 
-const JUMP_VELOCITY = 15;
-const GRAVITY = 0.8;
+const CANVAS_WIDTH = 1200;
+const CANVAS_HEIGHT = 600;
+const GROUND_Y = CANVAS_HEIGHT - 80;
+
+const DINO_SIZE = 150;
+const JUMP_VELOCITY = 20;
+const GRAVITY = 1;
 
 // --- TIPARE ---
 type ScoreRef = {
@@ -60,7 +59,8 @@ const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    dinoImgRef.current.src = pixelDino;
+    // Use the provided PNG asset for the dino graphic
+    dinoImgRef.current.src = dinoAsset;
     cactusImgRef.current.src = pixelCactus;
     pteroImgRef.current.src = pixelPtero;
     ctx.imageSmoothingEnabled = false; 
@@ -72,7 +72,6 @@ const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
     gameRunningRef.current = true;
     setIsGameOver(false);
     
-    // [1] Resetăm scorul DOAR dacă suntem în modul normal
     if (!externalScoreRef) { 
         activeScoreRef.current = 0;
     }
@@ -118,7 +117,6 @@ const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
       ctx.restore();
     };
 
-    // --- BUCLA PRINCIPALĂ ---
     const loop = () => {
       if (!gameRunningRef.current || !ctx) return;
 
@@ -159,11 +157,13 @@ const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
         const type = Math.random() > 0.7 ? 'ptero' : 'cactus';
         let h, w, y;
 
-        if (type === 'cactus') {
-             w = 30; h = 40; y = GROUND_Y - h;
-        } else {
-             w = 40; h = 20; y = GROUND_Y - h - 50;
-        }
+           if (type === 'cactus') {
+             // Double the original cactus size for clearer visibility
+             w = 60; h = 80; y = GROUND_Y - h;
+           } else {
+             // Double the ptero size and place it higher above ground
+             w = 80; h = 40; y = GROUND_Y - h - (DINO_SIZE + 20);
+           }
         
         obstacles.push({ x: CANVAS_WIDTH, y: y, w: w, h: h, type: type });
         obstacleTimer = 0;
@@ -251,7 +251,6 @@ const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
           </RetroButton>
         </div>
 
-        {/* Canvas Container */}
         <div style={{ 
             position: 'relative', 
             border: `4px solid ${NeonColors.GREEN}`,
@@ -265,7 +264,6 @@ const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
             style={{ display: 'block' }}
           />
 
-          {/* Ecran Game Over */}
           {isGameOver && (
             <div style={{
               position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
@@ -273,16 +271,16 @@ const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
               justifyContent: 'center', alignItems: 'center', backdropFilter: 'blur(5px)'
             }}>
               <h1 style={{ color: NeonColors.RED, fontSize: '40px', textShadow: `0 0 20px ${NeonColors.RED}`, marginBottom: '20px' }}>GAME OVER</h1>
-              <p style={{ color: 'white', fontFamily: '"Press Start 2P"', marginBottom: '30px' }}>Scor Final: {uiScore}</p>
+              <p style={{ color: 'white', fontFamily: '"Press Start 2P"', marginBottom: '30px' }}>Final Score: {uiScore}</p>
               <RetroButton variant="green" onClick={() => onGameOver(activeScoreRef.current)}>
-                💾 SALVEAZĂ SCOR
+                💾 SAVE SCORE
               </RetroButton>
             </div>
           )}
         </div>
 
         <p style={{ color: '#aaa', marginTop: '20px', fontFamily: '"Press Start 2P"', fontSize: '10px' }}>
-          APASĂ SPACE sau SĂGEATĂ SUS pentru a sări!
+          PRESS SPACE or UP ARROW to jump!
         </p>
       </div>
     </RetroBackground>
