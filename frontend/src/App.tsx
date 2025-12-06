@@ -12,6 +12,7 @@ import MainPage from "./pages/MainPage";
 import Chicken from "./pages/Chicken";
 import Snake from "./pages/Snake";
 import Profile from "./pages/Profile";
+import Dino from "./pages/Dino"; // <--- 1. IMPORT NOU PENTRU DINO RUN
 
 async function checkAuth() {
   const user = auth.currentUser;
@@ -44,7 +45,7 @@ function App() {
     else navigate("/login");
   }, [navigate, user]);
 
-  // Logică Salvare Scor - MUST BE BEFORE CONDITIONAL RETURN
+  // Logică Salvare Scor - CHICKEN INVADERS
   const handleGameOver = useCallback(async (score: number) => {
     const currentUser = auth.currentUser;
     if (currentUser) {
@@ -90,6 +91,28 @@ function App() {
       navigate("/login");
     }
   };
+  
+  // --- 2. HANDLER NOU PENTRU DINO RUN ---
+  const handleDinoGameOver = async (score: number) => {
+    const user = auth.currentUser;
+    if (user) {
+      try {
+        await addDoc(collection(db, "scores"), {
+          uid: user.uid,
+          email: user.email,
+          score: score,
+          game: "dino", // Specificăm jocul
+          createdAt: serverTimestamp()
+        });
+        alert("Scor Dino salvat!");
+        navigate("/dashboard");
+      } catch (e) {
+        console.error(e);
+      }
+    } else {
+      navigate("/login");
+    }
+  };
 
   return (
     <Routes>
@@ -105,7 +128,7 @@ function App() {
         path="/game/chicken" 
         element={
           <ProtectedRoute>
-            <Chicken // Folosim componenta importată: Chicken
+            <Chicken
               onGameOver={handleGameOver} 
               onExit={() => navigate("/dashboard")} 
             />
@@ -113,13 +136,26 @@ function App() {
         } 
       />
 
-      {/* RUTA JOCULUI 2: SNAKE (ADĂUGATĂ) */}
+      {/* RUTA JOCULUI 2: SNAKE */}
       <Route 
         path="/game/snake" 
         element={
           <ProtectedRoute>
-            <Snake // Folosim componenta importată: Snake
-              onGameOver={handleSnakeGameOver} // Funcție dedicată de salvare
+            <Snake
+              onGameOver={handleSnakeGameOver}
+              onExit={() => navigate("/dashboard")} 
+            />
+          </ProtectedRoute>
+        } 
+      />
+      
+      {/* --- 3. RUTA NOUĂ PENTRU DINO RUN --- */}
+      <Route 
+        path="/game/dino" 
+        element={
+          <ProtectedRoute>
+            <Dino // Folosim componenta importată: Dino
+              onGameOver={handleDinoGameOver} // Funcție dedicată de salvare
               onExit={() => navigate("/dashboard")} 
             />
           </ProtectedRoute>

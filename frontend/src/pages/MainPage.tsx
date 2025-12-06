@@ -2,7 +2,6 @@ import { useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebaseClient';
 import { RetroBackground } from '../components/RetroBackground';
-// Importăm și NeonColors pentru a stiliza textul
 import { RetroCard, RetroButton, RetroTitle, NeonColors } from '../components/RetroUI';
 
 const MainPage = () => {
@@ -34,7 +33,7 @@ const MainPage = () => {
 
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '30px' }}>
           
-          {/* Card Chicken Invaders */}
+          {/* CARD 1: Chicken Invaders (Cyan) */}
           <RetroCard color={NeonColors.CYAN}>
             <RetroTitle size="18px" color={NeonColors.CYAN}>SPACE CHICKEN</RetroTitle>
             <div style={{ fontSize: '50px', margin: '20px' }}>🐔</div>
@@ -46,7 +45,7 @@ const MainPage = () => {
             <RetroButton variant="cyan" onClick={() => navigate('/game/chicken')}>START GAME</RetroButton>
           </RetroCard>
 
-          {/* Card Snake - ACUM DEBLOCAT */}
+          {/* CARD 2: Snake (Pink) */}
           <RetroCard color={NeonColors.PINK}>
             <RetroTitle size="18px" color={NeonColors.PINK}>NEON SNAKE</RetroTitle>
             <div style={{ fontSize: '50px', margin: '20px' }}>🐍</div>
@@ -55,8 +54,19 @@ const MainPage = () => {
               Mananca mere neon si creste cat mai mult fara sa te lovesti de ziduri.
             </p>
             
-            {/* Buton activat */}
             <RetroButton variant="pink" onClick={() => navigate('/game/snake')}>START GAME</RetroButton>
+          </RetroCard>
+
+          {/* CARD 3: Dino Run (Yellow) - NOU */}
+          <RetroCard color={NeonColors.YELLOW}>
+            <RetroTitle size="18px" color={NeonColors.YELLOW}>NEON DINO RUN</RetroTitle>
+            <div style={{ fontSize: '50px', margin: '20px' }}>🦖</div>
+            
+            <p style={descriptionStyle(NeonColors.YELLOW)}>
+              Sari peste obstacole in acest joc clasic de alergare fara sfarsit.
+            </p>
+            
+            <RetroButton variant="yellow" onClick={() => navigate('/game/dino')}>START GAME</RetroButton>
           </RetroCard>
 
         </div>

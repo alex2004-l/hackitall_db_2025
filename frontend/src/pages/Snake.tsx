@@ -10,7 +10,7 @@ const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
 const COLS = CANVAS_WIDTH / GRID_SIZE;
 const ROWS = CANVAS_HEIGHT / GRID_SIZE;
-const GAME_SPEED = 300; 
+const GAME_SPEED = 150; // Timpul între mișcări (ms)
 
 type GameProps = {
   onGameOver: (score: number) => void;
@@ -23,8 +23,8 @@ const SnakeGame = ({ onGameOver, onExit }: GameProps) => {
   // Stare Logică 
   const snakeRef = useRef<Point[]>([{ x: 10, y: 10 }]); 
   const foodRef = useRef<Point>({ x: 15, y: 10 });
-  const directionRef = useRef<Point>({ x: 1, y: 0 }); 
-  const nextDirectionRef = useRef<Point>({ x: 1, y: 0 }); 
+  const directionRef = useRef<Point>({ x: 1, y: 0 }); // Direcția curentă
+  // nextDirectionRef a fost eliminat
   const scoreRef = useRef(0);
   const gameRunningRef = useRef(true);
 
@@ -41,60 +41,54 @@ const SnakeGame = ({ onGameOver, onExit }: GameProps) => {
     // Resetare joc
     snakeRef.current = [{ x: 5, y: 5 }, { x: 4, y: 5 }, { x: 3, y: 5 }];
     directionRef.current = { x: 1, y: 0 };
-    nextDirectionRef.current = { x: 1, y: 0 };
     scoreRef.current = 0;
     setUiScore(0);
     gameRunningRef.current = true;
     spawnFood();
 
-    // Controale
+    // Controale - MODIFICAT: Aplică direcția imediat
     const handleKeyDown = (e: KeyboardEvent) => {
       const { x, y } = directionRef.current;
       
       switch(e.key) {
         case 'ArrowUp': 
-          if (y === 0) nextDirectionRef.current = { x: 0, y: -1 }; break;
+          if (y === 0) directionRef.current = { x: 0, y: -1 }; break; 
         case 'ArrowDown': 
-          if (y === 0) nextDirectionRef.current = { x: 0, y: 1 }; break;
+          if (y === 0) directionRef.current = { x: 0, y: 1 }; break;  
         case 'ArrowLeft': 
-          if (x === 0) nextDirectionRef.current = { x: -1, y: 0 }; break;
+          if (x === 0) directionRef.current = { x: -1, y: 0 }; break; 
         case 'ArrowRight': 
-          if (x === 0) nextDirectionRef.current = { x: 1, y: 0 }; break;
+          if (x === 0) directionRef.current = { x: 1, y: 0 }; break; 
       }
     };
     window.addEventListener('keydown', handleKeyDown);
 
-    // Funcție random pentru mâncare
+    // Funcție random pentru mâncare (Rămâne la fel)
     function spawnFood() {
-        let newFood: Point = { x: 0, y: 0 };
-        let isOnSnake = false;
-        
-        // NOU: Definim o zonă de spawnare mai sigură.
-        // Excludem primul rând/coloană (index 0) și ultimul (index COLS-1 / ROWS-1)
-        const spawnCols = COLS - 2; // Spațiul de la 1 la COLS - 2
-        const spawnRows = ROWS - 2;
-    
-        do {
-          newFood = {
-            // Generăm X: între 1 și COLS - 2
-            x: Math.floor(Math.random() * spawnCols) + 1, 
-            // Generăm Y: între 1 și ROWS - 2
-            y: Math.floor(Math.random() * spawnRows) + 1
-          };
-          // Verificăm să nu apară mâncarea pe șarpe
-          // eslint-disable-next-line no-loop-func
-          isOnSnake = snakeRef.current.some(seg => seg.x === newFood.x && seg.y === newFood.y);
-        } while (isOnSnake);
-        
-        foodRef.current = newFood;
-      }
+      let newFood: Point = { x: 0, y: 0 };
+      let isOnSnake = false;
+      
+      const spawnCols = COLS - 2; 
+      const spawnRows = ROWS - 2;
+
+      do {
+        newFood = {
+          x: Math.floor(Math.random() * spawnCols) + 1, 
+          y: Math.floor(Math.random() * spawnRows) + 1
+        };
+        // eslint-disable-next-line no-loop-func
+        isOnSnake = snakeRef.current.some(seg => seg.x === newFood.x && seg.y === newFood.y);
+      } while (isOnSnake);
+      
+      foodRef.current = newFood;
+    }
 
     function gameOver() {
       gameRunningRef.current = false;
       setIsGameOver(true);
     }
 
-    // Desenare Pătrat Neon
+    // Desenare Pătrat Neon (Rămâne la fel)
     function drawRect(x: number, y: number, color: string, glow: boolean = true) {
       if (!ctx) return;
       ctx.fillStyle = color;
@@ -104,7 +98,6 @@ const SnakeGame = ({ onGameOver, onExit }: GameProps) => {
       } else {
         ctx.shadowBlur = 0;
       }
-      // Lăsăm 1px spațiu între segmente pentru aspect de grilă
       ctx.fillRect(x * GRID_SIZE + 1, y * GRID_SIZE + 1, GRID_SIZE - 2, GRID_SIZE - 2);
       ctx.shadowBlur = 0; // Reset glow
     }
@@ -121,8 +114,7 @@ const SnakeGame = ({ onGameOver, onExit }: GameProps) => {
       if (deltaTime >= GAME_SPEED) {
         lastTime = timestamp;
 
-        // 1. Actualizare Direcție
-        directionRef.current = nextDirectionRef.current;
+        // 1. Actualizare Direcție: Linia directionRef.current = nextDirectionRef.current a fost eliminată
         const head = { ...snakeRef.current[0] };
         head.x += directionRef.current.x;
         head.y += directionRef.current.y;
@@ -130,7 +122,7 @@ const SnakeGame = ({ onGameOver, onExit }: GameProps) => {
         // 2. Verificare Coliziuni (Pereți)
         if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) {
           gameOver();
-          return; // Stop loop
+          return; 
         }
 
         // 3. Verificare Coliziuni (Coada)
@@ -140,26 +132,22 @@ const SnakeGame = ({ onGameOver, onExit }: GameProps) => {
         }
 
         // 4. Mișcare Șarpe
-        snakeRef.current.unshift(head); // Adăugăm noul cap
+        snakeRef.current.unshift(head); 
 
         // 5. Verificare Mâncare
         if (head.x === foodRef.current.x && head.y === foodRef.current.y) {
-          // Am mâncat
           scoreRef.current += 10;
           setUiScore(scoreRef.current);
           spawnFood();
-          // Nu ștergem coada, deci șarpele crește
         } else {
-          snakeRef.current.pop(); // Ștergem coada (mișcare normală)
+          snakeRef.current.pop(); 
         }
       }
 
-      // --- DESENARE (La fiecare frame, pentru fluiditate vizuală) ---
-      // 1. Curățare
+      // --- DESENARE (Rămâne la fel) ---
       ctx.fillStyle = '#050510';
       ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-      // 2. Desenare Grilă (Subtilă)
       ctx.strokeStyle = 'rgba(0, 255, 0, 0.05)';
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -167,12 +155,9 @@ const SnakeGame = ({ onGameOver, onExit }: GameProps) => {
       for (let y = 0; y <= CANVAS_HEIGHT; y += GRID_SIZE) { ctx.moveTo(0, y); ctx.lineTo(CANVAS_WIDTH, y); }
       ctx.stroke();
 
-      // 3. Desenare Mâncare (Măr)
       drawRect(foodRef.current.x, foodRef.current.y, NeonColors.PINK);
 
-      // 4. Desenare Șarpe
       snakeRef.current.forEach((seg, index) => {
-        // Capul e mai strălucitor
         const color = index === 0 ? '#fff' : NeonColors.GREEN; 
         drawRect(seg.x, seg.y, color, true);
       });
@@ -188,11 +173,11 @@ const SnakeGame = ({ onGameOver, onExit }: GameProps) => {
     };
   }, []);
 
-  // Stiluri CSS inline pentru containere
+  // Stiluri CSS inline pentru containere (Rămân la fel)
   const uiBarStyle: React.CSSProperties = {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     width: `${CANVAS_WIDTH}px`, margin: '0 auto 20px auto',
-    backgroundColor: 'rgba(0, 20, 0, 0.8)', padding: '15px 25px', // Verde închis
+    backgroundColor: 'rgba(0, 20, 0, 0.8)', padding: '15px 25px', 
     border: `3px solid ${NeonColors.GREEN}`, 
     boxShadow: `0 0 25px ${NeonColors.GREEN}, inset 0 0 10px ${NeonColors.GREEN}`,
     borderRadius: '10px', boxSizing: 'border-box', color: 'white', fontFamily: '"Press Start 2P", cursive'

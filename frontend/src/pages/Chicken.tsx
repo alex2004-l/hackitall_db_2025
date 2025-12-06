@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { RetroBackground } from '../components/RetroBackground';
 
 // --- 1. IMPORT FONT RETRO ---
 const fontLink = document.createElement('link');
@@ -9,7 +10,6 @@ if (!document.head.querySelector(`link[href="${fontLink.href}"]`)) {
 }
 
 // --- 2. DEFINIȚIE SPRITE GĂINĂ (Pixel Art) ---
-// O găină albă cu creastă roșie și aripi gri
 const pixelChicken = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect fill='%23ffffff' x='6' y='6' width='20' height='20'/%3E%3Crect fill='%23ff0000' x='12' y='2' width='8' height='4'/%3E%3Crect fill='%23ffcc00' x='12' y='14' width='8' height='4'/%3E%3Crect fill='%23000000' x='10' y='10' width='4' height='4'/%3E%3Crect fill='%23000000' x='18' y='10' width='4' height='4'/%3E%3Crect fill='%23dddddd' x='2' y='10' width='4' height='8'/%3E%3Crect fill='%23dddddd' x='26' y='10' width='4' height='8'/%3E%3Crect fill='%23ff0000' x='13' y='26' width='2' height='4'/%3E%3Crect fill='%23ff0000' x='17' y='26' width='2' height='4'/%3E%3C/svg%3E`;
 
 type GameProps = {
@@ -43,7 +43,7 @@ const Game = ({ onGameOver, onExit }: GameProps) => {
   const NEON_PINK = '#f0f';
   const NEON_YELLOW = '#ff0';
   const NEON_RED = '#f00';
-  const BG_COLOR = '#050510';
+  const BG_COLOR = '#050510'; // Culoarea de fundal a Canvasului
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -93,6 +93,7 @@ const Game = ({ onGameOver, onExit }: GameProps) => {
       if (canvas.parentElement) {
           canvas.parentElement.style.boxShadow = `0 0 50px ${NEON_RED}, inset 0 0 50px ${NEON_RED}`;
           setTimeout(() => { 
+              // Restaurăm bordura Neon Cyan
               if (canvas.parentElement) canvas.parentElement.style.boxShadow = `0 0 40px ${NEON_CYAN}, inset 0 0 20px ${NEON_CYAN}`; 
           }, 300);
       }
@@ -185,12 +186,10 @@ const Game = ({ onGameOver, onExit }: GameProps) => {
         const enemy = enemies[i];
         enemy.y += enemySpeed;
         
-        // --- MODIFICARE: DESENARE GĂINĂ ÎN LOC DE DREPTUNGHI ---
+        // --- DESENARE GĂINĂ ---
         ctx.save();
-        // Adăugăm un glow roșu în jurul găinii ca să rămână "neon"
         ctx.shadowColor = '#f00'; 
         ctx.shadowBlur = 15;
-        // Desenăm imaginea găinii
         if (chickenImg.complete) {
             ctx.drawImage(chickenImg, enemy.x, enemy.y, enemy.width, enemy.height);
         } else {
@@ -199,7 +198,7 @@ const Game = ({ onGameOver, onExit }: GameProps) => {
             ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
         }
         ctx.restore();
-        // ------------------------------------------------------
+        // -----------------------
 
         // Coliziuni
         if (enemy.y > canvas.height) { enemies.splice(i, 1); loseLife(); continue; }
@@ -244,8 +243,7 @@ const Game = ({ onGameOver, onExit }: GameProps) => {
       color: NEON_CYAN, 
       padding: '20px', 
       fontFamily: '"Press Start 2P", cursive',
-      backgroundColor: '#020205',
-      minHeight: '100vh'
+      // AM ȘTERS AICI background și minHeight pentru a lăsa RetroBackground să se vadă
   };
 
   const textGlow = (color: string) => `0 0 5px ${color}, 0 0 10px ${color}, 0 0 20px ${color}`;
@@ -280,54 +278,60 @@ const Game = ({ onGameOver, onExit }: GameProps) => {
   };
 
   return (
-    <div style={containerStyle}>
-      
-      <div style={uiBarStyle}>
-        <h3 style={{ margin: 0, fontSize: '16px', textShadow: textGlow(NEON_CYAN) }}>SCORE: {uiScore}</h3>
-        <div style={{ fontSize: '20px', color: NEON_PINK, textShadow: textGlow(NEON_PINK) }}>
-          LIVES: {Array.from({ length: Math.max(0, uiLives) }).map((_, i) => <span key={i} style={{ marginLeft: '8px' }}>❤️</span>)}
-        </div>
-        <button onClick={onExit} style={buttonStyle(NEON_CYAN)}>IEȘIRE</button>
-      </div>
-      
-      <div style={{ 
-          position: 'relative', 
-          display: 'inline-block', 
-          width: `${CANVAS_WIDTH}px`, 
-          height: `${CANVAS_HEIGHT}px`,
-          border: `4px solid ${NEON_CYAN}`,
-          boxShadow: `0 0 40px ${NEON_CYAN}, inset 0 0 20px ${NEON_CYAN}`,
-          borderRadius: '4px',
-          overflow: 'hidden'
-      }}>
-        <canvas 
-          ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} 
-          style={{ display: 'block', backgroundColor: BG_COLOR }}
-        />
-
-        <div style={crtOverlayStyle}></div>
+    // <--- WRAPPER PRINCIPAL ADĂUGAT AICI --->
+    <RetroBackground>
+      <div style={containerStyle}>
         
-        {isGameOver && (
-          <div style={{
-            position: 'absolute', top: '0', left: '0', width: '100%', height: '100%',
-            backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)',
-            display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
-            border: `5px solid ${NEON_RED}`, 
-            boxShadow: `inset 0 0 100px ${NEON_RED}, 0 0 50px ${NEON_RED}`,
-            zIndex: 20
-          }}>
-            <h1 style={{ color: NEON_RED, fontSize: '45px', margin: '0 0 30px 0', textShadow: textGlow(NEON_RED) }}>GAME OVER</h1>
-            <p style={{ fontSize: '22px', color: '#fff', margin: '0 0 40px 0', textShadow: textGlow('#fff') }}>Final Score: {uiScore}</p>
-            <button onClick={() => onGameOver(uiScore)} style={{...buttonStyle(NEON_YELLOW), fontSize: '16px', padding: '15px 30px', backgroundColor: 'rgba(255, 255, 0, 0.2)'}}>
-              💾 SALVEAZĂ SCOR
-            </button>
+        {/* Bara UI */}
+        <div style={uiBarStyle}>
+          <h3 style={{ margin: 0, fontSize: '16px', textShadow: textGlow(NEON_CYAN) }}>SCORE: {uiScore}</h3>
+          <div style={{ fontSize: '20px', color: NEON_PINK, textShadow: textGlow(NEON_PINK) }}>
+            LIVES: {Array.from({ length: Math.max(0, uiLives) }).map((_, i) => <span key={i} style={{ marginLeft: '8px' }}>❤️</span>)}
           </div>
-        )}
+          <button onClick={onExit} style={buttonStyle(NEON_CYAN)}>IEȘIRE</button>
+        </div>
+        
+        {/* Container pentru Canvas și Efecte CRT */}
+        <div style={{ 
+            position: 'relative', 
+            display: 'inline-block', 
+            width: `${CANVAS_WIDTH}px`, 
+            height: `${CANVAS_HEIGHT}px`,
+            border: `4px solid ${NEON_CYAN}`,
+            boxShadow: `0 0 40px ${NEON_CYAN}, inset 0 0 20px ${NEON_CYAN}`,
+            borderRadius: '4px',
+            overflow: 'hidden'
+        }}>
+          <canvas 
+            ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} 
+            style={{ display: 'block', backgroundColor: BG_COLOR }}
+          />
+
+          <div style={crtOverlayStyle}></div>
+          
+          {isGameOver && (
+            <div style={{
+              position: 'absolute', top: '0', left: '0', width: '100%', height: '100%',
+              backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)',
+              display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
+              border: `5px solid ${NEON_RED}`, 
+              boxShadow: `inset 0 0 100px ${NEON_RED}, 0 0 50px ${NEON_RED}`,
+              zIndex: 20
+            }}>
+              <h1 style={{ color: NEON_RED, fontSize: '45px', margin: '0 0 30px 0', textShadow: textGlow(NEON_RED) }}>GAME OVER</h1>
+              <p style={{ fontSize: '22px', color: '#fff', margin: '0 0 40px 0', textShadow: textGlow('#fff') }}>Final Score: {uiScore}</p>
+              <button onClick={() => onGameOver(uiScore)} style={{...buttonStyle(NEON_YELLOW), fontSize: '16px', padding: '15px 30px', backgroundColor: 'rgba(255, 255, 0, 0.2)'}}>
+                💾 SALVEAZĂ SCOR
+              </button>
+            </div>
+          )}
+        </div>
+        <p style={{ color: '#aaa', marginTop: '25px', fontSize: '12px', textShadow: '0 0 5px #fff', opacity: 0.7 }}>
+          ⬅️ ➡️ Mișcare | SPACE Tragere
+        </p>
       </div>
-      <p style={{ color: '#aaa', marginTop: '25px', fontSize: '12px', textShadow: '0 0 5px #fff', opacity: 0.7 }}>
-        ⬅️ ➡️ Mișcare | SPACE Tragere
-      </p>
-    </div>
+    </RetroBackground>
+    // <--- WRAPPER PRINCIPAL ADĂUGAT AICI --->
   );
 };
 
