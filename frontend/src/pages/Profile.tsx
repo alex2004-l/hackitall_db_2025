@@ -22,6 +22,9 @@ const Profile: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [newUsername, setNewUsername] = useState("");
+  
+  // (Am eliminat starea useAI - acum e mereu true implicit)
+
   const [authStatus, setAuthStatus] = useState({
     user: auth.currentUser as (typeof auth.currentUser) | null,
     resolved: false,
@@ -32,7 +35,7 @@ const Profile: React.FC = () => {
 
   const setTimedStatus = useCallback((msg: string, isError: boolean = false) => {
     setAuthStatus(prev => ({ ...prev, message: msg }));
-    setTimeout(() => setAuthStatus(prev => ({ ...prev, message: null })), 3000);
+    setTimeout(() => setAuthStatus(prev => ({ ...prev, message: null })), 6000); 
     if (isError) console.error(`[ERROR] ${msg}`);
     else console.log(msg);
   }, []);
@@ -46,7 +49,7 @@ const Profile: React.FC = () => {
     return unsubscribe;
   }, []);
 
-  // Fetch profile from backend
+  // Fetch profile
   const fetchProfile = useCallback(async (user: typeof auth.currentUser) => {
     if (!user) return;
     try {
@@ -93,7 +96,7 @@ const Profile: React.FC = () => {
     }
   };
 
-  // Upload profile picture (backend pixelates)
+  // Upload profile picture
   const handlePictureUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     const user = authStatus.user;
@@ -101,31 +104,39 @@ const Profile: React.FC = () => {
 
     const formData = new FormData();
     formData.append("profilePicture", file);
+    
+    // --- TRIMITEM MEREU "true" CA SĂ ACTIVĂM PIXELAREA AUTOMATĂ ---
+    formData.append("use_ai", "true"); 
 
     try {
-      setTimedStatus("Uploading picture...");
+      setTimedStatus("PIXELATING IMAGE... Please wait.");
+      
       const token = await user.getIdToken();
       const response = await fetch(`${API_BASE_URL}/profile/picture`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
+      
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Server error");
       }
+      
       const data: { profilePictureUrl: string } = await response.json();
-      setProfile(prev => ({ ...prev, profilePictureUrl: data.profilePictureUrl }));
+      const newUrlWithCacheBust = `${data.profilePictureUrl}?t=${new Date().getTime()}`;
+      
+      setProfile(prev => ({ ...prev, profilePictureUrl: newUrlWithCacheBust }));
       setTimedStatus("Profile picture updated!");
     } catch (error) {
       setTimedStatus(`Picture update failed: ${error}`, true);
     }
   };
 
-  // --- Image URL Calculation ---
+  // Image URL Calculation
   const fullImageUrl = profile.profilePictureUrl
-    ? API_BASE_URL + profile.profilePictureUrl
-    : API_BASE_URL + DEFAULT_PICTURE; // Ensure the default image is also loaded from Flask
+    ? (profile.profilePictureUrl.startsWith('http') ? profile.profilePictureUrl : API_BASE_URL + profile.profilePictureUrl)
+    : API_BASE_URL + DEFAULT_PICTURE;
 
   if (!authStatus.resolved || loading) {
     return (
@@ -154,40 +165,42 @@ const Profile: React.FC = () => {
         <h1 style={{ fontSize: '2rem', textShadow: `0 0 10px ${NEON}`, marginBottom: '2rem' }}>PLAYER PROFILE</h1>
         {authStatus.message && <p style={{ color: authStatus.message.includes("[ERROR]") ? '#ff0000' : '#00ff00', marginBottom: '1rem', fontSize: '0.8rem', textShadow: authStatus.message.includes("[ERROR]") ? `0 0 5px #ff0000` : `0 0 5px #00ff00` }}>{authStatus.message}</p>}
 
-        {/* --- MODIFIED PROFILE PICTURE CONTAINER (Retro Box Frame) --- */}
+        {/* --- PICTURE CONTAINER --- */}
         <div style={{ 
           marginBottom: '2rem', 
           padding: '1rem', 
           border: `3px solid ${NEON}`, 
           boxShadow: `0 0 16px ${NEON}`, 
-          borderRadius: '8px', // Square corners for the outer box frame
-          backgroundColor: 'rgba(0, 0, 0, 0.4)', // Slightly dark background
-          display: 'inline-block', // Ensures the container fits the image area
+          borderRadius: '8px', 
+          backgroundColor: 'rgba(0, 0, 0, 0.4)', 
+          display: 'inline-block', 
           position: 'relative'
         }}>
           <img
             src={fullImageUrl}
             alt="Profile"
             style={{
-              width: '350px', // Set a fixed size for the display area
+              width: '350px', 
               height: '350px',
-              borderRadius: '50%', // Makes the image circular
+              borderRadius: '50%', 
               objectFit: 'cover',
               border: `5px solid ${ACCENT}`, 
               boxShadow: `0 0 10px ${ACCENT}`,
-              imageRendering: 'pixelated',
+              imageRendering: 'pixelated', 
               alignContent: 'left',
             }}
           />
           <br />
-          <label htmlFor="picture-upload" style={{ cursor: 'pointer', display: 'block', marginTop: '1rem', color: ACCENT, fontWeight: 'bold', fontSize: '0.8rem', textShadow: `0 0 5px ${ACCENT}` }}>
-            📸 CHANGE PROFILE PICTURE
+          
+          {/* (AM ELIMINAT AI TOGGLE SWITCH DE AICI) */}
+
+          <label htmlFor="picture-upload" style={{ cursor: 'pointer', display: 'inline-block', marginTop: '1.5rem', padding: '10px', border: `1px solid ${ACCENT}`, color: ACCENT, fontWeight: 'bold', fontSize: '0.8rem', textShadow: `0 0 5px ${ACCENT}`, boxShadow: `0 0 5px ${ACCENT}` }}>
+            📸 UPLOAD NEW PHOTO
           </label>
           <input id="picture-upload" type="file" accept="image/*" onChange={handlePictureUpload} style={{ display: 'none' }} />
         </div>
-        {/* --- END MODIFIED PICTURE CONTAINER --- */}
 
-        {/* Username */}
+        {/* Username Section */}
         <div style={{ padding: '1rem', border: `3px solid ${NEON}`, boxShadow: `0 0 16px ${NEON}`, borderRadius: '8px', marginBottom: '2rem' }}>
           <h3 style={{ fontSize: '1rem', marginBottom: '1rem' }}>PLAYER USERNAME</h3>
           {isEditing ? (
