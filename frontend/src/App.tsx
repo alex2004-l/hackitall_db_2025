@@ -6,7 +6,7 @@ function App() {
   return (
     <>
       <div className="card">
-        <HomePage onStart={() => alert('Game Started!')} />
+        <HomePage />
       </div>
     </>
   )
