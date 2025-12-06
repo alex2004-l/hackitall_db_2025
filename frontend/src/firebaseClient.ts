@@ -3,6 +3,7 @@ import { initializeApp } from "firebase/app";
 //import { getAnalytics } from "firebase/analytics";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore"; // <--- 1. Importă asta
+import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA3Q3nXtVYalLn6sB0u4Z49bV20WA9zZe8",
@@ -20,4 +21,6 @@ const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 export const db = getFirestore(app); // <--- 2. Exportă baza de date
+export const storage = getStorage(app);
+
 export default app;
