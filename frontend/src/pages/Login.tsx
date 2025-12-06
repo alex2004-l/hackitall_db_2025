@@ -22,7 +22,7 @@ function Login() {
     setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      navigate('/main');
+      navigate('/dashboard');
     } catch (e: any) { 
       setMessage(e.message);
     } finally {
@@ -41,7 +41,7 @@ function Login() {
       setMessage("Account created! Now logging in...");
       // Auto-login after registration
       await signInWithEmailAndPassword(auth, email, password);
-      navigate('/main');
+      navigate('/dashboard');
     } catch (e: any) { 
       setMessage(e.message);
     } finally {
@@ -53,7 +53,7 @@ function Login() {
     setLoading(true);
     try { 
       await signInAnonymously(auth);
-      navigate('/main');
+      navigate('/dashboard');
     } catch (e: any) { 
       setMessage(e.message);
     } finally {

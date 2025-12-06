@@ -1,5 +1,5 @@
-// src/pages/HomePage.tsx — Full Retro Neon Arcade Start Screen
-import React, { useEffect, useCallback } from "react";
+// src/pages/HomePage.tsx
+import { useEffect, useCallback} from "react";
 
 interface HomePageProps {
   onStart?: () => void;
