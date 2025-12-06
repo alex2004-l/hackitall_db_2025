@@ -48,9 +48,6 @@ const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
   const cactusImgRef = useRef(new Image());
   const pteroImgRef = useRef(new Image());
   
-  // Culori
-  const NEON_GREEN = NeonColors.GREEN;
-  const NEON_RED = NeonColors.RED;
   const BG_COLOR = '#050510'; 
 
   useEffect(() => {
@@ -65,7 +62,6 @@ const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
     pteroImgRef.current.src = pixelPtero;
     ctx.imageSmoothingEnabled = false; 
 
-    // Resetări inițiale
     dinoYRef.current = GROUND_Y - DINO_SIZE;
     velocityYRef.current = 0;
     isJumpingRef.current = false;
@@ -94,7 +90,6 @@ const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
       gameRunningRef.current = false;
       setIsGameOver(true);
       cancelAnimationFrame(animationId);
-      // Trimitem scorul din Ref-ul activ
       onGameOver(activeScoreRef.current); 
     };
 
@@ -118,9 +113,10 @@ const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
     };
 
     const loop = () => {
-      if (!gameRunningRef.current || !ctx) return;
+      if (!gameRunningRef.current || !ctx)
+          return;
 
-      // Calculul DIFICULTĂȚII
+
       const maxDifficultyScore = 1000.0;
       const difficultyFactor = Math.min(1, activeScoreRef.current / maxDifficultyScore); 
       
@@ -133,11 +129,9 @@ const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
       const currentMaxInterval = maxDelay - ((maxDelay - minDelay) * difficultyFactor);
       
       
-      // 1. Curățare Ecran
       ctx.fillStyle = BG_COLOR;
       ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-      // 2. Aplică Gravitația și Săritura (Rămâne la fel)
       if (isJumpingRef.current) {
         dinoYRef.current += velocityYRef.current;
         velocityYRef.current += GRAVITY;
@@ -158,11 +152,9 @@ const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
         let h, w, y;
 
            if (type === 'cactus') {
-             // Double the original cactus size for clearer visibility
-             w = 60; h = 80; y = GROUND_Y - h;
+             w = 60; h = 100; y = GROUND_Y - h;
            } else {
-             // Double the ptero size and place it higher above ground
-             w = 80; h = 40; y = GROUND_Y - h - (DINO_SIZE + 20);
+             w = 80; h = 60; y = GROUND_Y - h - (DINO_SIZE + 20);
            }
         
         obstacles.push({ x: CANVAS_WIDTH, y: y, w: w, h: h, type: type });

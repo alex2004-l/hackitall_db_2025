@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { auth } from "./../firebaseClient";
 import { RetroBackground } from "../components/RetroBackground";
 import { RetroButton, NeonColors } from "../components/RetroUI";
+import NavBar from '../components/NavBar';
 
 const API_BASE_URL = "http://localhost:5000";
 
@@ -160,12 +161,13 @@ const Profile: React.FC = () => {
   }
 
   return (
+    <>
+        <NavBar />
     <RetroBackground>
       <div style={{ padding: '2rem', maxWidth: '600px', margin: 'auto', textAlign: 'center', fontFamily: '"Press Start 2P", monospace', color: NEON, minHeight: '100vh' }}>
         <h1 style={{ fontSize: '2rem', textShadow: `0 0 10px ${NEON}`, marginBottom: '2rem' }}>PLAYER PROFILE</h1>
         {authStatus.message && <p style={{ color: authStatus.message.includes("[ERROR]") ? '#ff0000' : '#00ff00', marginBottom: '1rem', fontSize: '0.8rem', textShadow: authStatus.message.includes("[ERROR]") ? `0 0 5px #ff0000` : `0 0 5px #00ff00` }}>{authStatus.message}</p>}
 
-        {/* --- PICTURE CONTAINER --- */}
         <div style={{ 
           marginBottom: '2rem', 
           padding: '1rem', 
@@ -192,7 +194,6 @@ const Profile: React.FC = () => {
           />
           <br />
           
-          {/* (AM ELIMINAT AI TOGGLE SWITCH DE AICI) */}
 
           <label htmlFor="picture-upload" style={{ cursor: 'pointer', display: 'inline-block', marginTop: '1.5rem', padding: '10px', border: `1px solid ${ACCENT}`, color: ACCENT, fontWeight: 'bold', fontSize: '0.8rem', textShadow: `0 0 5px ${ACCENT}`, boxShadow: `0 0 5px ${ACCENT}` }}>
             📸 UPLOAD NEW PHOTO
@@ -217,12 +218,9 @@ const Profile: React.FC = () => {
           )}
         </div>
 
-        <div style={{ marginTop: '2rem', display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <RetroButton variant="yellow" onClick={() => navigate('/dashboard')} style={{ maxWidth: '200px' }}>DASHBOARD</RetroButton>
-          <RetroButton variant="red" onClick={() => auth.signOut()} style={{ maxWidth: '200px' }}>LOGOUT</RetroButton>
-        </div>
       </div>
     </RetroBackground>
+    </>
   );
 };
 
