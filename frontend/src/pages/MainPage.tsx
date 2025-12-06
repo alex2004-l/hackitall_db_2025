@@ -71,7 +71,8 @@ const MainPage = () => {
 
         </div>
 
-        <div style={{ marginTop: '50px' }}>
+        <div style={{ marginTop: '50px', display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <RetroButton variant="green" onClick={() => navigate('/profile')} style={{ maxWidth: '200px' }}>PROFILE</RetroButton>
           <RetroButton variant="red" onClick={handleLogout} style={{ maxWidth: '200px' }}>DELOGARE</RetroButton>
         </div>
 

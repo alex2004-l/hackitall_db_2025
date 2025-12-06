@@ -1,28 +1,25 @@
-# app.py (Modified to include local file storage)
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from functools import wraps
+import io
 
 import firebase_admin
 from firebase_admin import credentials, auth, firestore
 
-import os # New Import
-from werkzeug.utils import secure_filename # New Import
+import os
+from werkzeug.utils import secure_filename
 
-# Initialize Flask
+from PIL import Image
+
 app = Flask(__name__)
 CORS(app)
 
-# --- Configuration for Local Storage ---
-# Define a directory to save uploaded files (must be relative to app.py)
 UPLOAD_FOLDER = 'static/user_uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
-# Create upload folder if it doesn't exist (Runs once on server start)
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
-# ----------------------------------------
 
 cred = credentials.Certificate("serviceAccountKey.json")
 firebase_admin.initialize_app(cred)
@@ -31,7 +28,6 @@ db = firestore.client()
 
 PROFILES_COLLECTION = "User"
 
-# Utility function to check file extensions
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -58,30 +54,31 @@ def firebase_token_required(f):
         return f(*args, **kwargs)
     return wrapper
 
-# ... existing test_auth endpoint ...
 
 @app.route("/profile/init", methods=["POST"])
 @firebase_token_required
 def init_profile():
     """Initializes a new user profile in Firestore."""
+
     user_uid = request.user["uid"]
     user_email = request.user.get("email", "player")
     print(f"Initializing profile for user: {user_uid}")
 
-    # Use the static path for a default image if you have one saved locally
-    DEFAULT_PIC_PATH = "/static/system_defaults/user.jpg" # Update this path if needed
-    
+    DEFAULT_PIC_PATH = "static/system_defaults/user.jpg" 
+
     try:
         profile_ref = db.collection(PROFILES_COLLECTION).document(user_uid)
         profile_doc = profile_ref.get()
         
         if not profile_doc.exists:
             default_username = user_email.split("@")[0] if user_email else "ArcadePlayer"
+
             profile_ref.set({
                 "username": default_username,
-                "profilePictureUrl": DEFAULT_PIC_PATH, # Set local default path
+                "profilePictureUrl": DEFAULT_PIC_PATH,
                 "createdAt": firestore.SERVER_TIMESTAMP
             })
+
             print(f"Profile created with default username: {default_username}")
             return jsonify({"message": "Profile initialized", "created": True}), 201
         else:
@@ -109,8 +106,7 @@ def get_profile():
         
         return jsonify({
             "username": profile_data.get("username", "ArcadePlayer"),
-            # Sends the local path (e.g., /static/user_uploads/...) back to the frontend
-            "profilePictureUrl": profile_data.get("profilePictureUrl", "")
+            "profilePictureUrl": profile_data.get("profilePictureUrl", "static/system_defaults/user.jpg")
         }), 200
 
     except Exception as e:
@@ -121,7 +117,7 @@ def get_profile():
 @app.route("/profile", methods=["PUT"])
 @firebase_token_required
 def update_profile():
-    """Updates the profile data (only username here; picture is handled by POST /profile/picture)."""
+
     user_uid = request.user["uid"]
     data = request.get_json()
     print(f"PUT /profile request for user: {user_uid}")
@@ -157,14 +153,12 @@ def update_profile():
         return jsonify({"error": "Failed to update profile"}), 500
 
 
-# --- NEW ENDPOINT FOR FILE UPLOAD ---
+# app.py (Modified upload_profile_picture function)
 @app.route("/profile/picture", methods=["POST"])
 @firebase_token_required
 def upload_profile_picture():
-    """Receives image file, saves it locally, and updates the Firestore path."""
     user_uid = request.user["uid"]
     
-    # Check if the 'profilePicture' file part is in the request (must match frontend's FormData key)
     if 'profilePicture' not in request.files:
         return jsonify({"error": "No file part 'profilePicture' in the request"}), 400
     
@@ -174,20 +168,16 @@ def upload_profile_picture():
         return jsonify({"error": "No file selected"}), 400
     
     if file and allowed_file(file.filename):
-        # 1. Secure the filename and create a unique name using UID
-        file_extension = file.filename.rsplit('.', 1)[1].lower()
-        # Use UID to ensure a unique, non-colliding name for the user's profile picture
-        new_filename = f"{user_uid}.{file_extension}" 
-        
-        # 2. Define the absolute path to save the file
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], new_filename)
-
         try:
-            # Save the file locally
+            # 1. Get file extension and create filename
+            file_ext = secure_filename(file.filename).rsplit('.', 1)[1].lower()
+            new_filename = f"{user_uid}_profile.{file_ext}"
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], new_filename)
+            
+            # 2. Save the image directly without AI processing
             file.save(file_path)
             
-            # 3. Create the public URL path (relative to Flask's base URL)
-            # Flask's built-in server serves files from the 'static' directory.
+            # 3. Create the public URL path
             public_url_path = f"/static/user_uploads/{new_filename}"
 
             # 4. Update Firestore with the new local URL path
@@ -196,15 +186,16 @@ def upload_profile_picture():
             
             return jsonify({
                 "message": "Picture uploaded and saved successfully",
-                "profilePictureUrl": public_url_path # Return the new URL to the frontend
+                "profilePictureUrl": public_url_path
             }), 200
 
         except Exception as e:
-            print(f"File upload or Firestore update error: {e}")
-            return jsonify({"error": "Failed to process file upload"}), 500
+            print(f"File saving or Firestore update error: {e}")
+            return jsonify({"error": "Failed to save file"}), 500
     else:
         return jsonify({"error": "File type not allowed"}), 400
 
+# ... (Rest of app.py remains unchanged) ...
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
