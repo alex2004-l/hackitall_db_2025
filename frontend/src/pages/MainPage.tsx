@@ -57,7 +57,7 @@ const MainPage = () => {
             <RetroButton variant="pink" onClick={() => navigate('/game/snake')}>START GAME</RetroButton>
           </RetroCard>
 
-          {/* CARD 3: Dino Run (Yellow) - NOU */}
+          {/* CARD 3: Dino Run (Yellow) */}
           <RetroCard color={NeonColors.YELLOW}>
             <RetroTitle size="18px" color={NeonColors.YELLOW}>NEON DINO RUN</RetroTitle>
             <div style={{ fontSize: '50px', margin: '20px' }}>🦖</div>
@@ -67,6 +67,18 @@ const MainPage = () => {
             </p>
             
             <RetroButton variant="yellow" onClick={() => navigate('/game/dino')}>START GAME</RetroButton>
+          </RetroCard>
+
+          {/* CARD 4: Crazy Mode (RED) - NOU */}
+          <RetroCard color={NeonColors.RED}>
+            <RetroTitle size="18px" color={NeonColors.RED}>CRAZY MODE</RetroTitle>
+            <div style={{ fontSize: '50px', margin: '20px' }}>🔥</div>
+            
+            <p style={descriptionStyle(NeonColors.RED)}>
+              Modul extrem: jocurile se schimba la fiecare 30 de secunde!
+            </p>
+            
+            <RetroButton variant="red" onClick={() => navigate('/crazy-mode')}>START CRAZY MODE</RetroButton>
           </RetroCard>
 
         </div>

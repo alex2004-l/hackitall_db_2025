@@ -12,20 +12,29 @@ const COLS = CANVAS_WIDTH / GRID_SIZE;
 const ROWS = CANVAS_HEIGHT / GRID_SIZE;
 const GAME_SPEED = 150; // Timpul între mișcări (ms)
 
+type ScoreRef = {
+    current: number;
+};
+
 type GameProps = {
   onGameOver: (score: number) => void;
   onExit: () => void;
+  scoreRef?: ScoreRef; // Ref-ul de scor din Crazy Mode (opțional)
+  onScoreUpdate?: () => void; // Callback pentru actualizarea scorului total
 };
 
-const SnakeGame = ({ onGameOver, onExit }: GameProps) => {
+// MODIFICARE: Destructurăm prop-urile și redenumim scoreRef la externalScoreRef
+const SnakeGame = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }: GameProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
   // Stare Logică 
   const snakeRef = useRef<Point[]>([{ x: 10, y: 10 }]); 
   const foodRef = useRef<Point>({ x: 15, y: 10 });
   const directionRef = useRef<Point>({ x: 1, y: 0 }); // Direcția curentă
-  // nextDirectionRef a fost eliminat
-  const scoreRef = useRef(0);
+  
+  const localScoreRef = useRef(0); // Ref intern (fallback)
+  const activeScoreRef = externalScoreRef || localScoreRef; // Ref-ul care va fi folosit
+  
   const gameRunningRef = useRef(true);
 
   // Stare UI
@@ -41,12 +50,16 @@ const SnakeGame = ({ onGameOver, onExit }: GameProps) => {
     // Resetare joc
     snakeRef.current = [{ x: 5, y: 5 }, { x: 4, y: 5 }, { x: 3, y: 5 }];
     directionRef.current = { x: 1, y: 0 };
-    scoreRef.current = 0;
-    setUiScore(0);
+    
+    // Resetăm scorul DOAR dacă suntem în modul normal
+    if (!externalScoreRef) {
+        activeScoreRef.current = 0;
+    }
+    setUiScore(activeScoreRef.current);
     gameRunningRef.current = true;
     spawnFood();
 
-    // Controale - MODIFICAT: Aplică direcția imediat
+    // Controale - Aplică direcția imediat
     const handleKeyDown = (e: KeyboardEvent) => {
       const { x, y } = directionRef.current;
       
@@ -83,9 +96,11 @@ const SnakeGame = ({ onGameOver, onExit }: GameProps) => {
       foodRef.current = newFood;
     }
 
+    // MODIFICARE: Folosim activeScoreRef
     function gameOver() {
       gameRunningRef.current = false;
       setIsGameOver(true);
+      onGameOver(activeScoreRef.current);
     }
 
     // Desenare Pătrat Neon (Rămâne la fel)
@@ -114,7 +129,6 @@ const SnakeGame = ({ onGameOver, onExit }: GameProps) => {
       if (deltaTime >= GAME_SPEED) {
         lastTime = timestamp;
 
-        // 1. Actualizare Direcție: Linia directionRef.current = nextDirectionRef.current a fost eliminată
         const head = { ...snakeRef.current[0] };
         head.x += directionRef.current.x;
         head.y += directionRef.current.y;
@@ -136,8 +150,12 @@ const SnakeGame = ({ onGameOver, onExit }: GameProps) => {
 
         // 5. Verificare Mâncare
         if (head.x === foodRef.current.x && head.y === foodRef.current.y) {
-          scoreRef.current += 10;
-          setUiScore(scoreRef.current);
+          // MODIFICARE: Folosim activeScoreRef și onScoreUpdate
+          activeScoreRef.current += 10;
+          setUiScore(activeScoreRef.current);
+          if (onScoreUpdate) {
+            onScoreUpdate(); // Notifică CrazyMode pentru actualizarea totală
+          }
           spawnFood();
         } else {
           snakeRef.current.pop(); 
@@ -171,7 +189,7 @@ const SnakeGame = ({ onGameOver, onExit }: GameProps) => {
       gameRunningRef.current = false;
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  }, [externalScoreRef, activeScoreRef, onScoreUpdate]); // Dependențe adăugate
 
   // Stiluri CSS inline pentru containere (Rămân la fel)
   const uiBarStyle: React.CSSProperties = {
@@ -218,7 +236,7 @@ const SnakeGame = ({ onGameOver, onExit }: GameProps) => {
             }}>
               <h1 style={{ color: NeonColors.RED, fontSize: '40px', textShadow: `0 0 20px ${NeonColors.RED}`, marginBottom: '20px' }}>GAME OVER</h1>
               <p style={{ color: 'white', fontFamily: '"Press Start 2P"', marginBottom: '30px' }}>Scor Final: {uiScore}</p>
-              <RetroButton variant="green" onClick={() => onGameOver(uiScore)}>
+              <RetroButton variant="green" onClick={() => onGameOver(activeScoreRef.current)}>
                 💾 SALVEAZĂ SCOR
               </RetroButton>
             </div>

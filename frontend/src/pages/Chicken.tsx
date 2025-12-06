@@ -12,18 +12,29 @@ if (!document.head.querySelector(`link[href="${fontLink.href}"]`)) {
 // --- 2. DEFINIȚIE SPRITE GĂINĂ (Pixel Art) ---
 const pixelChicken = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect fill='%23ffffff' x='6' y='6' width='20' height='20'/%3E%3Crect fill='%23ff0000' x='12' y='2' width='8' height='4'/%3E%3Crect fill='%23ffcc00' x='12' y='14' width='8' height='4'/%3E%3Crect fill='%23000000' x='10' y='10' width='4' height='4'/%3E%3Crect fill='%23000000' x='18' y='10' width='4' height='4'/%3E%3Crect fill='%23dddddd' x='2' y='10' width='4' height='8'/%3E%3Crect fill='%23dddddd' x='26' y='10' width='4' height='8'/%3E%3Crect fill='%23ff0000' x='13' y='26' width='2' height='4'/%3E%3Crect fill='%23ff0000' x='17' y='26' width='2' height='4'/%3E%3C/svg%3E`;
 
+// --- TIPURI PENTRU CRAZY MODE ---
+type ScoreRef = {
+  current: number;
+};
+
 type GameProps = {
   onGameOver: (score: number) => void;
   onExit: () => void;
+  scoreRef?: ScoreRef; // Ref-ul de scor din Crazy Mode (opțional)
+  onScoreUpdate?: () => void; // Callback pentru actualizarea scorului total
 };
 
-const Game = ({ onGameOver, onExit }: GameProps) => {
+// MODIFICARE: Destructurăm prop-urile, redenumind scoreRef la externalScoreRef
+const Game = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }: GameProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
   // Stare logică (rapidă)
   const livesRef = useRef(3);
-  const scoreRef = useRef(0);
+  const localScoreRef = useRef(0); // [1] Ref-ul intern de scor (fallback)
   const gameRunningRef = useRef(true);
+  
+  // [2] Determinăm ce Ref vom folosi: cel extern (Crazy Mode) sau cel intern
+  const activeScoreRef = externalScoreRef || localScoreRef;
 
   // Stare UI (lentă)
   const [uiLives, setUiLives] = useState(3);
@@ -43,7 +54,7 @@ const Game = ({ onGameOver, onExit }: GameProps) => {
   const NEON_PINK = '#f0f';
   const NEON_YELLOW = '#ff0';
   const NEON_RED = '#f00';
-  const BG_COLOR = '#050510'; // Culoarea de fundal a Canvasului
+  const BG_COLOR = '#050510'; 
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -60,10 +71,14 @@ const Game = ({ onGameOver, onExit }: GameProps) => {
 
     // Reset valori
     livesRef.current = 3;
-    scoreRef.current = 0;
     gameRunningRef.current = true;
     setUiLives(3);
-    setUiScore(0);
+    
+    // [3] Resetăm scorul DOAR dacă suntem în modul normal
+    if (!externalScoreRef) { 
+        activeScoreRef.current = 0;
+    }
+    setUiScore(activeScoreRef.current);
 
     let animationId: number;
     let frameCount = 0;
@@ -103,9 +118,12 @@ const Game = ({ onGameOver, onExit }: GameProps) => {
       }
     };
 
+    // MODIFICARE: Folosim activeScoreRef
     const endGame = () => {
       gameRunningRef.current = false;
       setIsGameOver(true);
+      // Trimitem scorul din Ref-ul activ
+      onGameOver(activeScoreRef.current); 
     };
 
     // Funcție pentru dreptunghiuri strălucitoare (Player & Gloanțe)
@@ -215,8 +233,13 @@ const Game = ({ onGameOver, onExit }: GameProps) => {
           ) {
             enemies.splice(i, 1);
             bullets.splice(j, 1);
-            scoreRef.current += 50;
-            setUiScore(scoreRef.current);
+            
+            // [4] MODIFICARE: Folosim activeScoreRef și notificăm părintele
+            activeScoreRef.current += 50; 
+            setUiScore(activeScoreRef.current);
+            if (onScoreUpdate) { 
+                onScoreUpdate(); // Notifică CrazyMode să actualizeze scorul total
+            }
             break;
           }
         }
@@ -235,7 +258,7 @@ const Game = ({ onGameOver, onExit }: GameProps) => {
       window.removeEventListener('keyup', handleKeyUp);
       cancelAnimationFrame(animationId);
     };
-  }, []);
+  }, [activeScoreRef, onScoreUpdate]); // Adăugăm dependențe pentru useCallback (onScoreUpdate)
 
   // --- Stiluri UI ---
   const containerStyle: React.CSSProperties = { 
@@ -243,7 +266,6 @@ const Game = ({ onGameOver, onExit }: GameProps) => {
       color: NEON_CYAN, 
       padding: '20px', 
       fontFamily: '"Press Start 2P", cursive',
-      // AM ȘTERS AICI background și minHeight pentru a lăsa RetroBackground să se vadă
   };
 
   const textGlow = (color: string) => `0 0 5px ${color}, 0 0 10px ${color}, 0 0 20px ${color}`;
@@ -278,7 +300,6 @@ const Game = ({ onGameOver, onExit }: GameProps) => {
   };
 
   return (
-    // <--- WRAPPER PRINCIPAL ADĂUGAT AICI --->
     <RetroBackground>
       <div style={containerStyle}>
         
@@ -320,7 +341,7 @@ const Game = ({ onGameOver, onExit }: GameProps) => {
             }}>
               <h1 style={{ color: NEON_RED, fontSize: '45px', margin: '0 0 30px 0', textShadow: textGlow(NEON_RED) }}>GAME OVER</h1>
               <p style={{ fontSize: '22px', color: '#fff', margin: '0 0 40px 0', textShadow: textGlow('#fff') }}>Final Score: {uiScore}</p>
-              <button onClick={() => onGameOver(uiScore)} style={{...buttonStyle(NEON_YELLOW), fontSize: '16px', padding: '15px 30px', backgroundColor: 'rgba(255, 255, 0, 0.2)'}}>
+              <button onClick={() => onGameOver(activeScoreRef.current)} style={{...buttonStyle(NEON_YELLOW), fontSize: '16px', padding: '15px 30px', backgroundColor: 'rgba(255, 255, 0, 0.2)'}}>
                 💾 SALVEAZĂ SCOR
               </button>
             </div>
@@ -331,7 +352,6 @@ const Game = ({ onGameOver, onExit }: GameProps) => {
         </p>
       </div>
     </RetroBackground>
-    // <--- WRAPPER PRINCIPAL ADĂUGAT AICI --->
   );
 };
 

@@ -13,6 +13,7 @@ import Chicken from "./pages/Chicken";
 import Snake from "./pages/Snake";
 import Profile from "./pages/Profile";
 import Dino from "./pages/Dino"; // <--- 1. IMPORT NOU PENTRU DINO RUN
+import CrazyMode from "./pages/CrazyMode";
 
 async function checkAuth() {
   const user = auth.currentUser;
@@ -114,6 +115,24 @@ function App() {
     }
   };
 
+  const handleCrazyModeEnd = async (finalScore: number, gameId: string) => {
+    const user = auth.currentUser;
+    if (user) {
+        await addDoc(collection(db, "scores"), {
+            uid: user.uid,
+            email: user.email,
+            score: finalScore,
+            game: "crazymode", // Identificator mod
+            lost_on: gameId,   // Jocul la care a pierdut
+            createdAt: serverTimestamp()
+        });
+        alert(`Crazy Mode Terminat! Scor Total: ${finalScore}`);
+        navigate("/dashboard");
+    } else {
+        navigate("/login");
+    }
+  };
+
   return (
     <Routes>
       <Route path="/" element={<HomePage onStart={handleStart} />} />
@@ -158,6 +177,15 @@ function App() {
               onGameOver={handleDinoGameOver} // Funcție dedicată de salvare
               onExit={() => navigate("/dashboard")} 
             />
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/crazy-mode" 
+        element={
+          <ProtectedRoute>
+            <CrazyMode onModeEnd={handleCrazyModeEnd} />
           </ProtectedRoute>
         } 
       />
