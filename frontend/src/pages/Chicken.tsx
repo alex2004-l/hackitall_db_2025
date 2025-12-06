@@ -4,10 +4,13 @@ import { useEffect, useRef, useState } from 'react';
 const fontLink = document.createElement('link');
 fontLink.href = 'https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap';
 fontLink.rel = 'stylesheet';
-// Verificăm dacă există deja pentru a nu-l adăuga de mai multe ori
 if (!document.head.querySelector(`link[href="${fontLink.href}"]`)) {
     document.head.appendChild(fontLink);
 }
+
+// --- 2. DEFINIȚIE SPRITE GĂINĂ (Pixel Art) ---
+// O găină albă cu creastă roșie și aripi gri
+const pixelChicken = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect fill='%23ffffff' x='6' y='6' width='20' height='20'/%3E%3Crect fill='%23ff0000' x='12' y='2' width='8' height='4'/%3E%3Crect fill='%23ffcc00' x='12' y='14' width='8' height='4'/%3E%3Crect fill='%23000000' x='10' y='10' width='4' height='4'/%3E%3Crect fill='%23000000' x='18' y='10' width='4' height='4'/%3E%3Crect fill='%23dddddd' x='2' y='10' width='4' height='8'/%3E%3Crect fill='%23dddddd' x='26' y='10' width='4' height='8'/%3E%3Crect fill='%23ff0000' x='13' y='26' width='2' height='4'/%3E%3Crect fill='%23ff0000' x='17' y='26' width='2' height='4'/%3E%3C/svg%3E`;
 
 type GameProps = {
   onGameOver: (score: number) => void;
@@ -29,18 +32,18 @@ const Game = ({ onGameOver, onExit }: GameProps) => {
 
   // Configurări
   const playerSpeed = 7;
-  const bulletSpeed = 9; // Puțin mai rapid
-  const enemySpeed = 3; // Puțin mai rapid
-  const spawnRate = 45; // Apar mai des
+  const bulletSpeed = 9;
+  const enemySpeed = 3;
+  const spawnRate = 45;
   const CANVAS_WIDTH = 800;
   const CANVAS_HEIGHT = 600;
 
-  // Culori Neon Fosforescente
+  // Culori Neon
   const NEON_CYAN = '#0ff';
   const NEON_PINK = '#f0f';
   const NEON_YELLOW = '#ff0';
   const NEON_RED = '#f00';
-  const BG_COLOR = '#050510'; // Negru ușor albăstrui pentru contrast
+  const BG_COLOR = '#050510';
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -48,7 +51,14 @@ const Game = ({ onGameOver, onExit }: GameProps) => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Reset
+    // Setăm pixelare clară (fără blur la mărire)
+    ctx.imageSmoothingEnabled = false;
+
+    // --- PRE-ÎNCĂRCARE IMAGINE GĂINĂ ---
+    const chickenImg = new Image();
+    chickenImg.src = pixelChicken;
+
+    // Reset valori
     livesRef.current = 3;
     scoreRef.current = 0;
     gameRunningRef.current = true;
@@ -79,11 +89,11 @@ const Game = ({ onGameOver, onExit }: GameProps) => {
       setUiLives(livesRef.current);
       lastHitTime = Date.now();
 
-      // Flash roșu neon intens la lovitură pe containerul canvas
+      // Flash roșu pe container
       if (canvas.parentElement) {
           canvas.parentElement.style.boxShadow = `0 0 50px ${NEON_RED}, inset 0 0 50px ${NEON_RED}`;
           setTimeout(() => { 
-              if (canvas.parentElement) canvas.parentElement.style.boxShadow = 'none'; 
+              if (canvas.parentElement) canvas.parentElement.style.boxShadow = `0 0 40px ${NEON_CYAN}, inset 0 0 20px ${NEON_CYAN}`; 
           }, 300);
       }
 
@@ -97,7 +107,7 @@ const Game = ({ onGameOver, onExit }: GameProps) => {
       setIsGameOver(true);
     };
 
-    // --- Funcție ajutătoare pentru desenat cu strălucire ---
+    // Funcție pentru dreptunghiuri strălucitoare (Player & Gloanțe)
     const drawGlowingRect = (x: number, y: number, w: number, h: number, color: string, blur: number = 20) => {
         ctx.save();
         ctx.fillStyle = color;
@@ -111,35 +121,31 @@ const Game = ({ onGameOver, onExit }: GameProps) => {
     const loop = () => {
       if (!gameRunningRef.current) return;
 
-      // 1. Curățare Ecran (Fundal închis)
+      // 1. Curățare Ecran
       ctx.fillStyle = BG_COLOR; 
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // --- 1b. DESENARE GRILĂ RETRO (Merge în jos) ---
+      // --- 1b. DESENARE GRILĂ RETRO ---
       ctx.save();
-      ctx.strokeStyle = 'rgba(0, 255, 255, 0.15)'; // Cyan foarte transparent
+      ctx.strokeStyle = 'rgba(0, 255, 255, 0.15)';
       ctx.lineWidth = 2;
-      ctx.shadowBlur = 0; // Grila nu strălucește tare
       ctx.beginPath();
       
       const gridSpacing = 60;
-      const gridOffset = (frameCount * 3) % gridSpacing; // Viteza grilei
+      const gridOffset = (frameCount * 3) % gridSpacing;
 
-      // Linii orizontale (care se mișcă)
       for (let i = -1; i < CANVAS_HEIGHT / gridSpacing + 1; i++) {
           const y = i * gridSpacing + gridOffset;
           ctx.moveTo(0, y);
           ctx.lineTo(CANVAS_WIDTH, y);
       }
-      // Linii verticale (statice, pentru perspectivă)
       for (let i = 0; i <= CANVAS_WIDTH; i += gridSpacing) {
           ctx.moveTo(i, 0);
           ctx.lineTo(i, CANVAS_HEIGHT);
       }
       ctx.stroke();
       ctx.restore();
-      // -----------------------------------------
-
+      // --------------------------------
 
       // 2. Mișcare Jucător
       if (keys['ArrowLeft'] && player.x > 0) player.x -= playerSpeed;
@@ -150,8 +156,7 @@ const Game = ({ onGameOver, onExit }: GameProps) => {
       let blurAmount = 25;
 
       if (Date.now() - lastHitTime < 1000 && Math.floor(Date.now() / 100) % 2 === 0) {
-        // Invincibil (pâlpâie gri/alb)
-        playerColor = '#aaa';
+        playerColor = '#aaa'; // Invincibil
         blurAmount = 10;
       }
       drawGlowingRect(player.x, player.y, player.width, player.height, playerColor, blurAmount);
@@ -168,10 +173,11 @@ const Game = ({ onGameOver, onExit }: GameProps) => {
         if (b.y < 0) bullets.splice(i, 1);
       });
 
-      // 4. Generare Inamici
+      // 4. Generare Inamici (Găini)
       if (frameCount % spawnRate === 0) {
         const xPos = Math.random() * (canvas.width - 40);
-        enemies.push({ x: xPos, y: -40, width: 40, height: 40, color: NEON_RED });
+        // Dimensiune găină: 45x45 px
+        enemies.push({ x: xPos, y: -45, width: 45, height: 45, color: NEON_RED });
       }
 
       // 5. Logică Inamici
@@ -179,7 +185,21 @@ const Game = ({ onGameOver, onExit }: GameProps) => {
         const enemy = enemies[i];
         enemy.y += enemySpeed;
         
-        drawGlowingRect(enemy.x, enemy.y, enemy.width, enemy.height, enemy.color, 20);
+        // --- MODIFICARE: DESENARE GĂINĂ ÎN LOC DE DREPTUNGHI ---
+        ctx.save();
+        // Adăugăm un glow roșu în jurul găinii ca să rămână "neon"
+        ctx.shadowColor = '#f00'; 
+        ctx.shadowBlur = 15;
+        // Desenăm imaginea găinii
+        if (chickenImg.complete) {
+            ctx.drawImage(chickenImg, enemy.x, enemy.y, enemy.width, enemy.height);
+        } else {
+            // Fallback dacă imaginea nu s-a încărcat încă
+            ctx.fillStyle = 'red';
+            ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+        }
+        ctx.restore();
+        // ------------------------------------------------------
 
         // Coliziuni
         if (enemy.y > canvas.height) { enemies.splice(i, 1); loseLife(); continue; }
@@ -196,7 +216,7 @@ const Game = ({ onGameOver, onExit }: GameProps) => {
           ) {
             enemies.splice(i, 1);
             bullets.splice(j, 1);
-            scoreRef.current += 50; // Scor mai mare
+            scoreRef.current += 50;
             setUiScore(scoreRef.current);
             break;
           }
@@ -207,6 +227,7 @@ const Game = ({ onGameOver, onExit }: GameProps) => {
       animationId = requestAnimationFrame(loop);
     };
 
+    // Așteptăm puțin să se încarce imaginea, deși DataURI e instant
     animationId = requestAnimationFrame(loop);
 
     return () => {
@@ -214,21 +235,19 @@ const Game = ({ onGameOver, onExit }: GameProps) => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
       cancelAnimationFrame(animationId);
-      // Nu mai eliminăm link-ul fontului la unmount, poate fi folosit de alte pagini
     };
   }, []);
 
-  // --- Stiluri UI Retro Fosforescent ---
+  // --- Stiluri UI ---
   const containerStyle: React.CSSProperties = { 
       textAlign: 'center', 
       color: NEON_CYAN, 
       padding: '20px', 
       fontFamily: '"Press Start 2P", cursive',
-      backgroundColor: '#020205', // Fundal general foarte închis
+      backgroundColor: '#020205',
       minHeight: '100vh'
   };
 
-  // Stil pentru text fosforescent
   const textGlow = (color: string) => `0 0 5px ${color}, 0 0 10px ${color}, 0 0 20px ${color}`;
   
   const uiBarStyle: React.CSSProperties = {
@@ -251,14 +270,11 @@ const Game = ({ onGameOver, onExit }: GameProps) => {
     transition: 'all 0.2s ease-in-out'
   });
 
-  // --- CSS pentru efectul de scanlines și vignetă ---
   const crtOverlayStyle: React.CSSProperties = {
       position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-      pointerEvents: 'none', // Lasă click-urile să treacă
-      // Linii orizontale subtile (scanlines)
+      pointerEvents: 'none',
       backgroundImage: 'linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%)',
       backgroundSize: '100% 4px',
-      // Vignetă (colțuri întunecate)
       boxShadow: 'inset 0 0 100px rgba(0,0,0,0.7)',
       zIndex: 10
   };
@@ -266,7 +282,6 @@ const Game = ({ onGameOver, onExit }: GameProps) => {
   return (
     <div style={containerStyle}>
       
-      {/* Bara de UI Neon */}
       <div style={uiBarStyle}>
         <h3 style={{ margin: 0, fontSize: '16px', textShadow: textGlow(NEON_CYAN) }}>SCORE: {uiScore}</h3>
         <div style={{ fontSize: '20px', color: NEON_PINK, textShadow: textGlow(NEON_PINK) }}>
@@ -275,14 +290,13 @@ const Game = ({ onGameOver, onExit }: GameProps) => {
         <button onClick={onExit} style={buttonStyle(NEON_CYAN)}>IEȘIRE</button>
       </div>
       
-      {/* Container pentru Canvas și Efecte CRT */}
       <div style={{ 
           position: 'relative', 
           display: 'inline-block', 
           width: `${CANVAS_WIDTH}px`, 
           height: `${CANVAS_HEIGHT}px`,
           border: `4px solid ${NEON_CYAN}`,
-          boxShadow: `0 0 40px ${NEON_CYAN}, inset 0 0 20px ${NEON_CYAN}`, // Strălucire dublă (ext și int)
+          boxShadow: `0 0 40px ${NEON_CYAN}, inset 0 0 20px ${NEON_CYAN}`,
           borderRadius: '4px',
           overflow: 'hidden'
       }}>
@@ -291,10 +305,8 @@ const Game = ({ onGameOver, onExit }: GameProps) => {
           style={{ display: 'block', backgroundColor: BG_COLOR }}
         />
 
-        {/* Stratul suprapus pentru efectul CRT/Scanlines */}
         <div style={crtOverlayStyle}></div>
         
-        {/* Ecran Game Over Retro */}
         {isGameOver && (
           <div style={{
             position: 'absolute', top: '0', left: '0', width: '100%', height: '100%',

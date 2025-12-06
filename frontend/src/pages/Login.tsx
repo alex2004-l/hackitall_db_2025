@@ -7,9 +7,11 @@ import {
   signInAnonymously 
 } from 'firebase/auth';
 
-// 1. Importăm componentele refolosibile
+// 1. IMPORTĂM COMPONENTA DE FUNDAL ANIMAT
+import { RetroBackground } from '../components/RetroBackground';
+
+// 2. IMPORTĂM RESTUL COMPONENTELOR UI (Fără RetroContainer)
 import { 
-  RetroContainer, 
   RetroCard, 
   RetroButton, 
   RetroTitle, 
@@ -23,7 +25,7 @@ function Login() {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // --- LOGICA DE AUTH (Rămâne neschimbată) ---
+  // --- LOGICA DE AUTH (Neschimbată) ---
   const handleLogin = async () => {
     if (!email || !password) { setMessage('Introduceți email și parola'); return; }
     setLoading(true); setMessage('');
@@ -55,7 +57,7 @@ function Login() {
     finally { setLoading(false); }
   };
 
-  // --- STIL PENTRU INPUT (Local, deoarece nu avem RetroInput în RetroUI încă) ---
+  // Stil local pentru input
   const inputStyle: React.CSSProperties = {
     width: '100%',
     padding: '15px',
@@ -70,16 +72,20 @@ function Login() {
   };
 
   return (
-    // 2. Folosim RetroContainer pentru fundalul paginii
-    <RetroContainer>
+    // 3. ÎNLOCUIM RetroContainer CU RetroBackground
+    <RetroBackground>
       
-      {/* Centrarea cardului pe verticală */}
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh' }}>
+      {/* Container pentru centrare (flexbox) */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        minHeight: '100vh' // Ocupă tot ecranul
+      }}>
         
-        {/* 3. Folosim RetroCard pentru cutia de login */}
+        {/* Cardul de Login */}
         <RetroCard style={{ width: '100%', maxWidth: '450px', padding: '40px' }}>
           
-          {/* 4. RetroTitle pentru titlu */}
           <RetroTitle size="20px">INSERT COIN</RetroTitle>
           
           <div style={{ display: 'flex', flexDirection: 'column', marginTop: '30px' }}>
@@ -101,7 +107,6 @@ function Login() {
             />
             
             <div style={{ display: 'flex', gap: '15px', marginTop: '10px' }}>
-              {/* 5. RetroButton pentru acțiuni */}
               <RetroButton variant="cyan" onClick={handleLogin} disabled={loading}>
                 {loading ? '...' : 'LOGARE'}
               </RetroButton>
@@ -131,7 +136,7 @@ function Login() {
 
         </RetroCard>
       </div>
-    </RetroContainer>
+    </RetroBackground>
   );
 }
 

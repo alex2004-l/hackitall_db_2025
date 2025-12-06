@@ -67,6 +67,28 @@ function App() {
   }, [navigate]);
 
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: '#00ff66', fontFamily: '"Press Start 2P", monospace' }}>Loading...</div>;
+  
+  // Handler pentru salvare scor Snake
+  const handleSnakeGameOver = async (score: number) => {
+    const user = auth.currentUser;
+    if (user) {
+      try {
+        await addDoc(collection(db, "scores"), {
+          uid: user.uid,
+          email: user.email,
+          score: score,
+          game: "snake", // Specificăm jocul
+          createdAt: serverTimestamp()
+        });
+        alert("Scor Snake salvat!");
+        navigate("/dashboard");
+      } catch (e) {
+        console.error(e);
+      }
+    } else {
+      navigate("/login");
+    }
+  };
 
   return (
     <Routes>

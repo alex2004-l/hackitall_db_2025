@@ -39,7 +39,6 @@ const MainPage = () => {
             <RetroTitle size="18px" color={NeonColors.CYAN}>SPACE CHICKEN</RetroTitle>
             <div style={{ fontSize: '50px', margin: '20px' }}>🐔</div>
             
-            {/* --- TEXTUL A FOST REINTRODUS AICI --- */}
             <p style={descriptionStyle(NeonColors.CYAN)}>
               Apara pamantul de invazia gainilor intergalactice in acest shooter clasic!
             </p>
@@ -47,17 +46,17 @@ const MainPage = () => {
             <RetroButton variant="cyan" onClick={() => navigate('/game/chicken')}>START GAME</RetroButton>
           </RetroCard>
 
-          {/* Card Snake */}
-          <RetroCard color={NeonColors.PINK} style={{ opacity: 0.7 }}>
+          {/* Card Snake - ACUM DEBLOCAT */}
+          <RetroCard color={NeonColors.PINK}>
             <RetroTitle size="18px" color={NeonColors.PINK}>NEON SNAKE</RetroTitle>
             <div style={{ fontSize: '50px', margin: '20px' }}>🐍</div>
             
-            {/* --- TEXTUL A FOST REINTRODUS AICI --- */}
             <p style={descriptionStyle(NeonColors.PINK)}>
               Mananca mere neon si creste cat mai mult fara sa te lovesti de ziduri.
             </p>
             
-            <RetroButton variant="pink" disabled>LOCKED 🔒</RetroButton>
+            {/* Buton activat */}
+            <RetroButton variant="pink" onClick={() => navigate('/game/snake')}>START GAME</RetroButton>
           </RetroCard>
 
         </div>
