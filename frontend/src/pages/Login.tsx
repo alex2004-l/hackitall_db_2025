@@ -1,5 +1,5 @@
 import { useState } from 'react';
-// @ts-ignore
+import { useNavigate } from 'react-router-dom';
 import { auth } from '../firebaseClient';
 import { 
   signInWithEmailAndPassword, 
@@ -8,25 +8,57 @@ import {
 } from 'firebase/auth';
 
 function Login() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
+    if (!email || !password) {
+      setMessage('Please enter email and password');
+      return;
+    }
+    setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-    } catch (e: any) { setMessage(e.message); }
+      navigate('/main');
+    } catch (e: any) { 
+      setMessage(e.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleRegister = async () => {
+    if (!email || !password) {
+      setMessage('Please enter email and password');
+      return;
+    }
+    setLoading(true);
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-      setMessage("Cont creat! Acum te poți loga.");
-    } catch (e: any) { setMessage(e.message); }
+      setMessage("Account created! Now logging in...");
+      // Auto-login after registration
+      await signInWithEmailAndPassword(auth, email, password);
+      navigate('/main');
+    } catch (e: any) { 
+      setMessage(e.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleAnon = async () => {
-    try { await signInAnonymously(auth); } catch (e: any) { setMessage(e.message); }
+    setLoading(true);
+    try { 
+      await signInAnonymously(auth);
+      navigate('/main');
+    } catch (e: any) { 
+      setMessage(e.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -36,26 +68,36 @@ function Login() {
         <input 
           type="email" 
           placeholder="Email" 
-          onChange={(e) => setEmail(e.target.value)} 
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          disabled={loading}
           style={{ padding: '8px' }}
         />
         <input 
           type="password" 
           placeholder="Parola" 
-          onChange={(e) => setPassword(e.target.value)} 
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          disabled={loading}
           style={{ padding: '8px' }}
         />
         
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-          <button onClick={handleLogin}>Logare</button>
-          <button onClick={handleRegister}>Înregistrare</button>
+          <button onClick={handleLogin} disabled={loading}>
+            {loading ? 'Logging in...' : 'Logare'}
+          </button>
+          <button onClick={handleRegister} disabled={loading}>
+            {loading ? 'Creating...' : 'Înregistrare'}
+          </button>
         </div>
         
         <hr />
-        <button onClick={handleAnon}>Joacă Anonim</button>
+        <button onClick={handleAnon} disabled={loading}>
+          {loading ? 'Loading...' : 'Joacă Anonim'}
+        </button>
       </div>
       
-      {message && <p style={{ color: 'red', marginTop: '10px' }}>{message}</p>}
+      {message && <p style={{ color: message.includes('successfully') ? 'green' : 'red', marginTop: '10px' }}>{message}</p>}
     </div>
   );
 }
