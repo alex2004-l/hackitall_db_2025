@@ -25,7 +25,6 @@ const HomePage = ({ onStart }: HomePageProps) => {
   }, [handleStart]);
 
   return (
-    // Folosim Wrapper-ul care conține deja animațiile și cele 35 de obiecte
     <RetroBackground>
       
       <div style={{
@@ -65,7 +64,7 @@ const HomePage = ({ onStart }: HomePageProps) => {
             style={{ 
               fontSize: '1.2rem', 
               padding: '20px',
-              animation: 'blink 1.5s infinite' // Adăugăm efect de blink manual
+              animation: 'blink 1.5s infinite'
             }}
           >
             PRESS START

@@ -13,8 +13,8 @@ interface ProfileData {
 
 const NEON = "#00ff66";
 const ACCENT = "#ff33cc";
-// NOTE: Make sure this path exists in your Flask static folders for the default image!
-const DEFAULT_PICTURE = "/static/system_defaults/user.jpg"; 
+
+const DEFAULT_PICTURE = "../../../backend/static/system_defaults/user.jpg"; 
 
 const Profile: React.FC = () => {
   const navigate = useNavigate();

@@ -71,6 +71,13 @@ function Login() {
     boxSizing: 'border-box'
   };
 
+  // Handle Enter key press to submit login
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !loading) {
+      handleLogin();
+    }
+  };
+
   return (
     // 3. ÎNLOCUIM RetroContainer CU RetroBackground
     <RetroBackground>
@@ -94,32 +101,34 @@ function Login() {
               placeholder="EMAIL..." 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              onKeyPress={handleKeyPress}
               disabled={loading}
               style={inputStyle}
             />
             <input 
               type="password" 
-              placeholder="PAROLA..." 
+              placeholder="PASSWORD..." 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              onKeyPress={handleKeyPress}
               disabled={loading}
               style={inputStyle}
             />
             
             <div style={{ display: 'flex', gap: '15px', marginTop: '10px' }}>
               <RetroButton variant="cyan" onClick={handleLogin} disabled={loading}>
-                {loading ? '...' : 'LOGARE'}
+                {loading ? '...' : 'LOG IN'}
               </RetroButton>
               
               <RetroButton variant="pink" onClick={handleRegister} disabled={loading}>
-                {loading ? '...' : 'ÎNREGISTRARE'}
+                {loading ? '...' : 'SIGN UP'}
               </RetroButton>
             </div>
             
             <hr style={{ border: `1px solid ${NeonColors.CYAN}`, margin: '25px 0', opacity: 0.5 }} />
             
             <RetroButton variant="yellow" onClick={handleAnon} disabled={loading}>
-              JOACĂ ANONIM (FREE PLAY)
+              PLAY AS A GUEST
             </RetroButton>
           </div>
           
