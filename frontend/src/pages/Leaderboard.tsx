@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
+// Importăm doc și getDoc pentru a lua datele actualizate despre user
+import { collection, query, where, orderBy, limit, getDocs, doc, getDoc } from 'firebase/firestore'; 
 // @ts-ignore
 import { db } from '../firebaseClient';
 import { RetroBackground } from '../components/RetroBackground';
@@ -9,10 +10,11 @@ import { RetroCard, RetroTitle, RetroButton, NeonColors } from '../components/Re
 interface ScoreEntry {
   id: string;
   email?: string;
-  username?: string;
+  username?: string; // Numele din momentul scorului (fallback)
+  realUsername?: string; // Numele ACTUAL din profil
   score: number;
   game?: string;
-  uid?: string; // Avem nevoie de UID pentru a identifica unicitatea
+  uid?: string;
 }
 
 const Leaderboard = () => {
@@ -24,7 +26,8 @@ const Leaderboard = () => {
   useEffect(() => {
     const fetchScores = async () => {
       try {
-        // 1. Cerem mai multe date (100) ca să avem de unde filtra duplicatele
+        // 1. Cerem mai multe rezultate (100) pentru a avea de unde filtra duplicatele
+        // și pe cei unknown, ca să rămânem cu un Top 20 curat.
         const q = query(
           collection(db, "scores"),
           where("game", "==", "crazymode"),
@@ -34,46 +37,63 @@ const Leaderboard = () => {
 
         const snapshot = await getDocs(q);
         
-        // --- LOGICĂ FILTRARE UNICĂ & MAXIM ---
         const uniqueScores: ScoreEntry[] = [];
-        const seenUsers = new Set<string>(); // Set pentru a ține minte cine a fost adăugat
+        const seenUsers = new Set<string>(); // Set pentru a ține minte cine a fost deja adăugat
 
-        snapshot.docs.forEach(doc => {
-          const data = doc.data();
+        // 2. Procesare și Filtrare
+        for (const docSnap of snapshot.docs) {
+          const data = docSnap.data();
           const userId = data.uid || data.email; // Identificator unic
+
+          // A. Filtru de siguranță: Sărim peste intrările fără ID
+          if (!userId) continue;
+
+          // B. Filtru UNICITATE: Dacă am mai adăugat acest user, sărim peste (reținem doar primul scor, care e MAXIM)
+          if (seenUsers.has(userId)) continue;
+
+          // C. Filtru "UNKNOWN": Verificăm dacă numele e valid
+          let candidateName = data.username;
+          if (!candidateName && data.email) candidateName = data.email.split('@')[0];
           
-          // A. Determinăm Numele pentru a verifica dacă e Unknown
-          let displayName = "";
-          if (data.username && data.username.trim() !== "") displayName = data.username;
-          else if (data.email) displayName = data.email.split('@')[0];
-          
-          // B. FILTRU 1: Eliminăm "Unknown" / "Anonymous"
-          if (!displayName || 
-              displayName.toLowerCase().includes("unknown") || 
-              displayName.toLowerCase().includes("anon")) {
-            return; // Sărim peste acest scor
+          if (!candidateName || 
+              candidateName.toLowerCase().includes("unknown") || 
+              candidateName.toLowerCase().includes("anon")) {
+            continue; // Sărim peste jucătorii anonimi sau fără nume
           }
 
-          // C. FILTRU 2: Verificăm dacă utilizatorul există deja
-          // Deoarece query-ul e sortat descrescător, primul scor găsit pentru un user e automat cel MAXIM
-          if (seenUsers.has(userId)) {
-            return; // Sărim peste scorurile mai mici ale aceluiași om
-          }
-
-          // D. Dacă trece filtrele, îl adăugăm
+          // Dacă trece toate filtrele, îl marcăm ca văzut și îl adăugăm
           seenUsers.add(userId);
+
           uniqueScores.push({
-            id: doc.id,
+            id: docSnap.id,
             email: data.email,
             username: data.username,
             score: typeof data.score === 'number' ? data.score : 0,
-            game: data.game,
-            uid: data.uid
+            uid: userId
           });
-        });
+        }
+
+        // Tăiem lista finală la top 20
+        const top20 = uniqueScores.slice(0, 20);
+
+        // 3. FETCH SECUNDAR: Luăm numele actuale din colecția "User" (Profil)
+        // Facem asta doar pentru cei 20 rămași, nu pentru toți 100
+        const enrichedScores = await Promise.all(top20.map(async (entry) => {
+            if (!entry.uid) return entry;
+            try {
+                const userSnap = await getDoc(doc(db, "User", entry.uid));
+                if (userSnap.exists()) {
+                    const userData = userSnap.data();
+                    // Actualizăm numele dacă utilizatorul l-a schimbat în profil
+                    return { ...entry, realUsername: userData.username };
+                }
+            } catch (e) {
+                console.error("User fetch err:", e);
+            }
+            return entry;
+        }));
         
-        // Tăiem lista finală la top 20 după filtrare
-        setScores(uniqueScores.slice(0, 20));
+        setScores(enrichedScores);
 
       } catch (error: any) {
         console.error("Eroare Leaderboard:", error);
@@ -90,9 +110,10 @@ const Leaderboard = () => {
     fetchScores();
   }, []);
 
-  const formatName = (entry: ScoreEntry) => {
-    if (entry.username && entry.username.trim() !== "") return entry.username;
-    if (entry.email) return entry.email.split('@')[0];
+  // Alegem numele cel mai bun pentru afișare
+  const getDisplayName = (entry: ScoreEntry) => {
+    if (entry.realUsername) return entry.realUsername; // Numele actual din profil
+    if (entry.username) return entry.username; // Numele vechi de la scor
     return "PLAYER";
   };
 
@@ -100,29 +121,25 @@ const Leaderboard = () => {
     <RetroBackground>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px', minHeight: '100vh', position: 'relative', zIndex: 20 }}>
         
-        <RetroCard color={NeonColors.RED} style={{ width: '100%', maxWidth: '600px', padding: '30px', backgroundColor: '#050505', boxShadow: `0 0 30px ${NeonColors.RED}` }}>
+        <RetroCard color={NeonColors.RED} style={{ width: '100%', maxWidth: '700px', padding: '30px', backgroundColor: '#050505', boxShadow: `0 0 30px ${NeonColors.RED}` }}>
           
           <RetroTitle size="24px" color={NeonColors.RED}>CRAZY MODE CHAMPIONS</RetroTitle>
           <p style={{ color: '#aaa', fontSize: '10px', marginBottom: '30px', textTransform: 'uppercase' }}>
-            BEST SCORE PER PLAYER (TOP 20)
+            CLICK PE NUME PENTRU PROFIL
           </p>
 
           {errorMsg ? (
-             <div style={{ color: NeonColors.RED, textAlign: 'center', margin: '20px 0', border: '1px solid red', padding: '10px' }}>
-                ⚠️ {errorMsg}
-             </div>
+             <div style={{ color: NeonColors.RED }}>⚠️ {errorMsg}</div>
           ) : loading ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: NeonColors.YELLOW, animation: 'blink 1s infinite' }}>
-              LOADING DATA...
-            </div>
+            <div style={{ padding: '40px', textAlign: 'center', color: NeonColors.YELLOW, animation: 'blink 1s infinite' }}>LOADING DATA...</div>
           ) : (
-            <div style={{ maxHeight: '60vh', overflowY: 'auto', border: `2px solid ${NeonColors.RED}`, padding: '10px', backgroundColor: '#000' }}>
+            <div style={{ maxHeight: '60vh', overflowY: 'auto', border: `2px solid ${NeonColors.RED}`, backgroundColor: '#000' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: '"Press Start 2P", monospace', fontSize: '12px' }}>
                 <thead style={{ position: 'sticky', top: 0, backgroundColor: '#111', zIndex: 5 }}>
                   <tr style={{ color: NeonColors.RED, borderBottom: `2px solid ${NeonColors.RED}` }}>
-                    <th style={{ padding: '15px 5px', textAlign: 'center' }}>#</th>
-                    <th style={{ padding: '15px 5px', textAlign: 'left' }}>PLAYER</th>
-                    <th style={{ padding: '15px 5px', textAlign: 'right' }}>BEST</th>
+                    <th style={{ padding: '15px', width: '50px', textAlign: 'center' }}>#</th>
+                    <th style={{ padding: '15px', textAlign: 'left' }}>PLAYER</th>
+                    <th style={{ padding: '15px', textAlign: 'right' }}>BEST</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -140,12 +157,26 @@ const Leaderboard = () => {
                       else if (index === 2) rowColor = '#cd7f32';
 
                       return (
-                        <tr key={entry.id} style={{ color: rowColor, borderBottom: '1px solid #222', backgroundColor: index % 2 === 0 ? '#0a0a0a' : '#000' }}>
-                          <td style={{ padding: '15px 5px', textAlign: 'center' }}>{index + 1}.</td>
-                          <td style={{ padding: '15px 5px', textAlign: 'left' }}>
-                            {formatName(entry).toUpperCase()}
+                        <tr 
+                          key={entry.id} 
+                          // Facem rândul clickabil pentru a vedea profilul
+                          onClick={() => entry.uid && navigate(`/profile/${entry.uid}`)}
+                          style={{ 
+                            color: rowColor, 
+                            borderBottom: '1px solid #222', 
+                            backgroundColor: index % 2 === 0 ? '#0a0a0a' : '#000',
+                            cursor: 'pointer',
+                            transition: 'background 0.2s'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#220000'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = index % 2 === 0 ? '#0a0a0a' : '#000'}
+                        >
+                          <td style={{ padding: '15px', textAlign: 'center' }}>{index + 1}.</td>
+                          <td style={{ padding: '15px', textAlign: 'left' }}>
+                            <span style={{ marginRight: '10px' }}>👤</span>
+                            {getDisplayName(entry).toUpperCase()}
                           </td>
-                          <td style={{ padding: '15px 5px', textAlign: 'right', color: NeonColors.GREEN }}>
+                          <td style={{ padding: '15px', textAlign: 'right', color: NeonColors.GREEN }}>
                             {entry.score}
                           </td>
                         </tr>
@@ -157,9 +188,8 @@ const Leaderboard = () => {
             </div>
           )}
 
-          <div style={{ marginTop: '30px', display: 'flex', justifyContent: 'center', gap: '20px' }}>
+          <div style={{ marginTop: '30px', textAlign: 'center' }}>
             <RetroButton variant="yellow" onClick={() => navigate('/dashboard')} style={{ maxWidth: '200px' }}>ÎNAPOI</RetroButton>
-            <RetroButton variant="green" onClick={() => window.location.reload()} style={{ maxWidth: '200px' }}>REFRESH</RetroButton>
           </div>
 
         </RetroCard>

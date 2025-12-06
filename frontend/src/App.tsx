@@ -15,6 +15,7 @@ import Profile from "./pages/Profile";
 import Dino from "./pages/Dino"; // <--- 1. IMPORT NOU PENTRU DINO RUN
 import CrazyMode from "./pages/CrazyMode";
 import Leaderboard from "./pages/Leaderboard";
+import PublicProfile from "./pages/PublicProfile";
 
 async function checkAuth() {
   const user = auth.currentUser;
@@ -196,6 +197,15 @@ function App() {
         element={
           <ProtectedRoute>
             <Leaderboard />
+          </ProtectedRoute>
+        } 
+      />
+
+      <Route 
+        path="/profile/:uid" 
+        element={
+          <ProtectedRoute>
+            <PublicProfile />
           </ProtectedRoute>
         } 
       />
