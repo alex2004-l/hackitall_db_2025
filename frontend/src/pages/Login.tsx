@@ -1,6 +1,6 @@
 import { useState } from 'react';
 // @ts-ignore
-import { auth } from './firebaseClient';
+import { auth } from '../firebaseClient';
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
