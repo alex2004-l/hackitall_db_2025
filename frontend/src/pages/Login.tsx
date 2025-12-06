@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../firebaseClient';
+// 1. IMPORTURI NOI PENTRU GOOGLE
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
-  signInAnonymously 
+  signInAnonymously,
+  GoogleAuthProvider,   // <--- Import nou
+  signInWithPopup       // <--- Import nou
 } from 'firebase/auth';
 
-// 1. IMPORTĂM COMPONENTA DE FUNDAL ANIMAT
 import { RetroBackground } from '../components/RetroBackground';
-
-// 2. IMPORTĂM RESTUL COMPONENTELOR UI (Fără RetroContainer)
 import { 
   RetroCard, 
   RetroButton, 
@@ -25,7 +25,7 @@ function Login() {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // --- LOGICA DE AUTH (Neschimbată) ---
+  // --- LOGICA DE AUTH ---
   const handleLogin = async () => {
     if (!email || !password) { setMessage('Please enter email and password'); return; }
     setLoading(true); setMessage('');
@@ -48,6 +48,17 @@ function Login() {
     finally { setLoading(false); }
   };
 
+  // 2. HANDLER NOU PENTRU GOOGLE
+  const handleGoogleLogin = async () => {
+    setLoading(true); setMessage('');
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      navigate('/dashboard');
+    } catch (e: any) { setMessage(e.message); } 
+    finally { setLoading(false); }
+  };
+
   const handleAnon = async () => {
     setLoading(true); setMessage('');
     try { 
@@ -57,7 +68,6 @@ function Login() {
     finally { setLoading(false); }
   };
 
-  // Stil local pentru input
   const inputStyle: React.CSSProperties = {
     width: '100%',
     padding: '15px',
@@ -71,7 +81,6 @@ function Login() {
     boxSizing: 'border-box'
   };
 
-  // Handle Enter key press to submit login
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !loading) {
       handleLogin();
@@ -79,18 +88,14 @@ function Login() {
   };
 
   return (
-    // 3. ÎNLOCUIM RetroContainer CU RetroBackground
     <RetroBackground>
-      
-      {/* Container pentru centrare (flexbox) */}
       <div style={{ 
         display: 'flex', 
         justifyContent: 'center', 
         alignItems: 'center', 
-        minHeight: '100vh' // Ocupă tot ecranul
+        minHeight: '100vh' 
       }}>
         
-        {/* Cardul de Login */}
         <RetroCard style={{ width: '100%', maxWidth: '450px', padding: '40px' }}>
           
           <RetroTitle size="20px">INSERT COIN</RetroTitle>
@@ -115,13 +120,20 @@ function Login() {
               style={inputStyle}
             />
             
+            {/* Butoane Email/Pass */}
             <div style={{ display: 'flex', gap: '15px', marginTop: '10px' }}>
               <RetroButton variant="cyan" onClick={handleLogin} disabled={loading}>
                 {loading ? '...' : 'LOG IN'}
               </RetroButton>
-              
               <RetroButton variant="pink" onClick={handleRegister} disabled={loading}>
                 {loading ? '...' : 'SIGN UP'}
+              </RetroButton>
+            </div>
+
+            {/* 3. BUTONUL DE GOOGLE (Adăugat aici) */}
+            <div style={{ marginTop: '15px' }}>
+              <RetroButton variant="green" onClick={handleGoogleLogin} disabled={loading}>
+                LOGIN WITH GOOGLE
               </RetroButton>
             </div>
             

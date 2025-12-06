@@ -14,6 +14,7 @@ import Snake from "./pages/Snake";
 import Profile from "./pages/Profile";
 import Dino from "./pages/Dino"; // <--- 1. IMPORT NOU PENTRU DINO RUN
 import CrazyMode from "./pages/CrazyMode";
+import Leaderboard from "./pages/Leaderboard";
 
 async function checkAuth() {
   const user = auth.currentUser;
@@ -186,6 +187,15 @@ function App() {
         element={
           <ProtectedRoute>
             <CrazyMode onModeEnd={handleCrazyModeEnd} />
+          </ProtectedRoute>
+        } 
+      />
+
+      <Route 
+        path="/leaderboard" 
+        element={
+          <ProtectedRoute>
+            <Leaderboard />
           </ProtectedRoute>
         } 
       />
