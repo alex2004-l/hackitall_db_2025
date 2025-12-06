@@ -1,0 +1,72 @@
+mutation CreateSeedData @transaction @auth(level: PUBLIC, insecureReason: "This operation is only used to seed the database with initial data and is not intended for general use.") {
+  user_insertMany(data: [
+    {
+      id: "550e8400-e29b-41d4-a716-446655440000",
+      username: "demouser1",
+      email: "demouser1@example.com",
+      createdAt: "2024-01-01T00:00:00Z"
+    },
+    {
+      id: "550e8400-e29b-41d4-a716-446655440001",
+      username: "demouser2",
+      email: "demouser2@example.com",
+      createdAt: "2024-01-01T00:00:00Z"
+    }
+  ])
+  game_insertMany(data: [
+    {
+      id: "660e8400-e29b-41d4-a716-446655440000",
+      title: "Sample Game 1",
+      genre: "Action",
+      releaseYear: 2022,
+      createdAt: "2024-01-01T00:00:00Z"
+    },
+    {
+      id: "660e8400-e29b-41d4-a716-446655440001",
+      title: "Sample Game 2",
+      genre: "Strategy",
+      releaseYear: 2023,
+      createdAt: "2024-01-01T00:00:00Z"
+    }
+  ])
+  playSession_insertMany(data: [
+    {
+      id: "770e8400-e29b-41d4-a716-446655440000",
+      userId: "550e8400-e29b-41d4-a716-446655440000",
+      gameId: "660e8400-e29b-41d4-a716-446655440000",
+      playDate: "2024-01-05",
+      score: 1000,
+      createdAt: "2024-01-05T00:00:00Z"
+    },
+    {
+      id: "770e8400-e29b-41d4-a716-446655440001",
+      userId: "550e8400-e29b-41d4-a716-446655440001",
+      gameId: "660e8400-e29b-41d4-a716-446655440001",
+      playDate: "2024-01-06",
+      score: 2000,
+      createdAt: "2024-01-06T00:00:00Z"
+    }
+  ])
+  comment_insertMany(data: [
+    {
+      id: "880e8400-e29b-41d4-a716-446655440000",
+      userId: "550e8400-e29b-41d4-a716-446655440000",
+      playSessionId: "770e8400-e29b-41d4-a716-446655440000",
+      content: "Great game!",
+      createdAt: "2024-01-05T00:00:00Z"
+    },
+    {
+      id: "880e8400-e29b-41d4-a716-446655440001",
+      userId: "550e8400-e29b-41d4-a716-446655440001",
+      playSessionId: "770e8400-e29b-41d4-a716-446655440001",
+      content: "Awesome!",
+      createdAt: "2024-01-06T00:00:00Z"
+    }
+  ])
+  follow_insertMany(data: [
+    {
+      followerId: "550e8400-e29b-41d4-a716-446655440000",
+      followedId: "550e8400-e29b-41d4-a716-446655440001"
+    }
+  ])
+}

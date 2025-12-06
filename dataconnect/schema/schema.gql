@@ -1,0 +1,38 @@
+type User @table {
+  username: String!
+  email: String
+  profilePictureUrl: String
+  bio: String
+  createdAt: Timestamp!
+}
+
+type Game @table {
+  title: String!
+  genre: String!
+  releaseYear: Int!
+  description: String
+  imageUrl: String
+  createdAt: Timestamp!
+}
+
+type PlaySession @table {
+  user: User!
+  game: Game!
+  playDate: Date!
+  score: Int!
+  notes: String
+  createdAt: Timestamp!
+}
+
+type Comment @table {
+  user: User!
+  playSession: PlaySession!
+  parentComment: Comment
+  content: String!
+  createdAt: Timestamp!
+}
+
+type Follow @table(key: ["follower", "followed"]) {
+  follower: User!
+  followed: User!
+}
