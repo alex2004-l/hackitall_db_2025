@@ -1,6 +1,9 @@
 import { useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebaseClient';
+import { RetroBackground } from '../components/RetroBackground';
+// Importăm și NeonColors pentru a stiliza textul
+import { RetroCard, RetroButton, RetroTitle, NeonColors } from '../components/RetroUI';
 
 const MainPage = () => {
   const navigate = useNavigate();
@@ -8,44 +11,63 @@ const MainPage = () => {
 
   const handleLogout = async () => {
     await signOut(auth);
-    navigate('/'); // Te trimite înapoi la Home după delogare
+    navigate('/');
   };
 
+  // Stil comun pentru textele descriptive
+  const descriptionStyle = (color: string): React.CSSProperties => ({
+    fontSize: '10px',
+    lineHeight: '1.6',
+    color: color,
+    margin: '20px 0',
+    textShadow: `0 0 5px ${color}`
+  });
+
   return (
-    <div style={{ textAlign: 'center', color: '#0ff', padding: '50px', fontFamily: '"Press Start 2P", cursive' }}>
-      <h1>ARCADE DASHBOARD</h1>
-      <p>Bine ai venit, {user?.email}!</p>
+    <RetroBackground>
+      <div style={{ padding: '40px', textAlign: 'center' }}>
+        
+        <RetroTitle size="32px">ARCADE DASHBOARD</RetroTitle>
+        <p style={{ color: '#aaa', marginBottom: '40px', fontSize: '12px' }}>
+          PLAYER: {user?.email || 'ANONIM'}
+        </p>
 
-      <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', marginTop: '50px' }}>
-        {/* CARD JOC 1: Chicken Invaders */}
-        <div style={{ border: '2px solid #0ff', padding: '20px', borderRadius: '10px', boxShadow: '0 0 15px #0ff' }}>
-          <h3>CHICKEN INVADERS</h3>
-          <p>Apara pamantul de gaini!</p>
-          <button 
-            onClick={() => navigate('/game/chicken')}
-            style={{ 
-              padding: '10px 20px', cursor: 'pointer', fontFamily: 'inherit',
-              background: '#0ff', color: '#000', border: 'none', marginTop: '10px' 
-            }}
-          >
-            JOACĂ ACUM ▶
-          </button>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '30px' }}>
+          
+          {/* Card Chicken Invaders */}
+          <RetroCard color={NeonColors.CYAN}>
+            <RetroTitle size="18px" color={NeonColors.CYAN}>SPACE CHICKEN</RetroTitle>
+            <div style={{ fontSize: '50px', margin: '20px' }}>🐔</div>
+            
+            {/* --- TEXTUL A FOST REINTRODUS AICI --- */}
+            <p style={descriptionStyle(NeonColors.CYAN)}>
+              Apara pamantul de invazia gainilor intergalactice in acest shooter clasic!
+            </p>
+            
+            <RetroButton variant="cyan" onClick={() => navigate('/game/chicken')}>START GAME</RetroButton>
+          </RetroCard>
+
+          {/* Card Snake */}
+          <RetroCard color={NeonColors.PINK} style={{ opacity: 0.7 }}>
+            <RetroTitle size="18px" color={NeonColors.PINK}>NEON SNAKE</RetroTitle>
+            <div style={{ fontSize: '50px', margin: '20px' }}>🐍</div>
+            
+            {/* --- TEXTUL A FOST REINTRODUS AICI --- */}
+            <p style={descriptionStyle(NeonColors.PINK)}>
+              Mananca mere neon si creste cat mai mult fara sa te lovesti de ziduri.
+            </p>
+            
+            <RetroButton variant="pink" disabled>LOCKED 🔒</RetroButton>
+          </RetroCard>
+
         </div>
 
-        {/* CARD JOC 2: (Viitor) */}
-        <div style={{ border: '2px solid #f0f', padding: '20px', borderRadius: '10px', opacity: 0.5 }}>
-          <h3>SNAKE RETRO</h3>
-          <p>In curand...</p>
-          <button disabled style={{ padding: '10px 20px', fontFamily: 'inherit' }}>LOCKED 🔒</button>
+        <div style={{ marginTop: '50px' }}>
+          <RetroButton variant="red" onClick={handleLogout} style={{ maxWidth: '200px' }}>DELOGARE</RetroButton>
         </div>
-      </div>
 
-      <div style={{ marginTop: '50px' }}>
-        <button onClick={handleLogout} style={{ background: 'red', color: 'white', border: 'none', padding: '10px', fontFamily: 'inherit', cursor: 'pointer' }}>
-          DELOGARE
-        </button>
       </div>
-    </div>
+    </RetroBackground>
   );
 };
 
