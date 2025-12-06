@@ -9,7 +9,8 @@ import ProtectedRoute from "./ProtectedRoute";
 import HomePage from "./pages/HomePage";
 import Login from "./pages/Login";
 import MainPage from "./pages/MainPage";
-import Game from "./pages/Game";
+import Chicken from "./pages/Chicken";
+import Snake from "./pages/Snake";
 import Profile from "./pages/Profile";
 
 async function checkAuth() {
@@ -94,14 +95,31 @@ function App() {
     <Routes>
       <Route path="/" element={<HomePage onStart={handleStart} />} />
       <Route path="/login" element={<Login />} />
+      
+      {/* RUTE PROTEJATE (Vizibile doar dacă userul e logat) */}
       <Route path="/dashboard" element={<ProtectedRoute><MainPage /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+
+      {/* RUTA JOCULUI 1: CHICKEN INVADERS */}
       <Route 
         path="/game/chicken" 
         element={
           <ProtectedRoute>
-            <Game 
+            <Chicken // Folosim componenta importată: Chicken
               onGameOver={handleGameOver} 
+              onExit={() => navigate("/dashboard")} 
+            />
+          </ProtectedRoute>
+        } 
+      />
+
+      {/* RUTA JOCULUI 2: SNAKE (ADĂUGATĂ) */}
+      <Route 
+        path="/game/snake" 
+        element={
+          <ProtectedRoute>
+            <Snake // Folosim componenta importată: Snake
+              onGameOver={handleSnakeGameOver} // Funcție dedicată de salvare
               onExit={() => navigate("/dashboard")} 
             />
           </ProtectedRoute>
