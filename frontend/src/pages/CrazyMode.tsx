@@ -76,7 +76,7 @@ const CrazyMode = ({ onModeEnd }: CrazyModeProps) => {
                     // change game
                     setCurrentGameIndex(prevIndex => (prevIndex + 1) % games.length);
                     setGameKey(prevKey => prevKey + 1); 
-                    return 30;
+                    return 10;
                 }
                 return prevTime - 1;
             });

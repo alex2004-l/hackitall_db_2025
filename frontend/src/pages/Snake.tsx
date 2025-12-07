@@ -146,7 +146,7 @@ const SnakeGame = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpda
           activeScoreRef.current += 50;
           setUiScore(activeScoreRef.current);
 
-          if (activeScoreRef.current >= 150 && !isGlitchingRef.current) {
+          if (activeScoreRef.current >= 50 && !isGlitchingRef.current) {
             isGlitchingRef.current = true;
             setGlitchActiveUI(true); 
           }
