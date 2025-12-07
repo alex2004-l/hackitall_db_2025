@@ -9,7 +9,7 @@ const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
 const COLS = CANVAS_WIDTH / GRID_SIZE;
 const ROWS = CANVAS_HEIGHT / GRID_SIZE;
-const GAME_SPEED = 150; 
+const GAME_SPEED = 300; 
 
 type ScoreRef = {
     current: number;
@@ -34,6 +34,10 @@ const SnakeGame = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpda
   
   const gameRunningRef = useRef(true);
 
+  // 🔥 GLITCH STATE
+  const isGlitchingRef = useRef(false); // Ref pentru loop (fără re-render)
+  const [glitchActiveUI, setGlitchActiveUI] = useState(false); // State pentru border roșu
+
   const [uiScore, setUiScore] = useState(0);
   const [isGameOver, setIsGameOver] = useState(false);
 
@@ -43,8 +47,11 @@ const SnakeGame = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpda
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // Resetare stare
     snakeRef.current = [{ x: 5, y: 5 }, { x: 4, y: 5 }, { x: 3, y: 5 }];
     directionRef.current = { x: 1, y: 0 };
+    isGlitchingRef.current = false;
+    setGlitchActiveUI(false);
     
     if (!externalScoreRef) {
         activeScoreRef.current = 0;
@@ -120,24 +127,31 @@ const SnakeGame = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpda
         head.x += directionRef.current.x;
         head.y += directionRef.current.y;
 
-        // check wall-collision
+        // Check walls
         if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) {
           gameOver();
           return; 
         }
 
-        // check self-collision
+        // Check self
         if (snakeRef.current.some(seg => seg.x === head.x && seg.y === head.y)) {
           gameOver();
           return;
         }
 
-        // snake movement
         snakeRef.current.unshift(head); 
 
+        // Eat Food
         if (head.x === foodRef.current.x && head.y === foodRef.current.y) {
-          activeScoreRef.current += 10;
+          activeScoreRef.current += 50;
           setUiScore(activeScoreRef.current);
+
+          // 🔥 ACTIVARE GLITCH LA 40 PCT
+          if (activeScoreRef.current >= 40 && !isGlitchingRef.current) {
+            isGlitchingRef.current = true;
+            setGlitchActiveUI(true); // Doar schimbăm border-ul în roșu
+          }
+
           if (onScoreUpdate) {
             onScoreUpdate(); 
           }
@@ -147,9 +161,28 @@ const SnakeGame = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpda
         }
       }
 
-      ctx.fillStyle = '#050510';
+      // ==========================================
+      // 🔥 DESENARE CU EFECTE GLITCH
+      // ==========================================
+
+      // 1. Background (uneori flash rosu/alb daca e glitch)
+      let bgCol = '#050510';
+      if (isGlitchingRef.current && Math.random() > 0.95) {
+         bgCol = Math.random() > 0.5 ? NeonColors.RED : '#ffffff';
+      }
+      ctx.fillStyle = bgCol;
       ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
+      ctx.save(); // Salvăm poziția normală
+
+      // 2. Screen Shake (Tremurat)
+      if (isGlitchingRef.current && Math.random() > 0.6) {
+        const shakeX = (Math.random() - 0.5) * 15; 
+        const shakeY = (Math.random() - 0.5) * 15; 
+        ctx.translate(shakeX, shakeY);
+      }
+
+      // 3. Grid
       ctx.strokeStyle = 'rgba(0, 255, 0, 0.05)';
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -157,12 +190,25 @@ const SnakeGame = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpda
       for (let y = 0; y <= CANVAS_HEIGHT; y += GRID_SIZE) { ctx.moveTo(0, y); ctx.lineTo(CANVAS_WIDTH, y); }
       ctx.stroke();
 
+      // 4. Food & Snake
       drawRect(foodRef.current.x, foodRef.current.y, NeonColors.PINK);
 
       snakeRef.current.forEach((seg, index) => {
-        const color = index === 0 ? '#fff' : NeonColors.GREEN; 
+        let color = index === 0 ? '#fff' : NeonColors.GREEN;
+        // Uneori șarpele devine roșu pentru o fracțiune de secundă
+        if (isGlitchingRef.current && Math.random() > 0.95) color = NeonColors.RED;
         drawRect(seg.x, seg.y, color, true);
       });
+
+      ctx.restore(); // Revenim la poziția normală
+
+      // 5. Artefacte "Static Noise" (linii peste ecran)
+      if (isGlitchingRef.current && Math.random() > 0.8) {
+          ctx.fillStyle = `rgba(255, 255, 255, ${Math.random() * 0.2})`;
+          const h = Math.random() * 20 + 2;
+          const y = Math.random() * CANVAS_HEIGHT;
+          ctx.fillRect(0, y, CANVAS_WIDTH, h);
+      }
 
       requestAnimationFrame(loop);
     };
@@ -175,13 +221,18 @@ const SnakeGame = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpda
     };
   }, [externalScoreRef, activeScoreRef, onScoreUpdate]); 
 
+  // Stiluri dinamice pentru UI
+  const borderColor = glitchActiveUI ? NeonColors.RED : NeonColors.GREEN;
+  const shadowColor = glitchActiveUI ? NeonColors.RED : NeonColors.GREEN;
+
   const uiBarStyle: React.CSSProperties = {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     width: `${CANVAS_WIDTH}px`, margin: '0 auto 20px auto',
     backgroundColor: 'rgba(0, 20, 0, 0.8)', padding: '15px 25px', 
-    border: `3px solid ${NeonColors.GREEN}`, 
-    boxShadow: `0 0 25px ${NeonColors.GREEN}, inset 0 0 10px ${NeonColors.GREEN}`,
-    borderRadius: '10px', boxSizing: 'border-box', color: 'white', fontFamily: '"Press Start 2P", cursive'
+    border: `3px solid ${borderColor}`, 
+    boxShadow: `0 0 25px ${shadowColor}, inset 0 0 10px ${shadowColor}`,
+    borderRadius: '10px', boxSizing: 'border-box', color: 'white', fontFamily: '"Press Start 2P", cursive',
+    transition: 'all 0.3s ease'
   };
 
   return (
@@ -189,7 +240,10 @@ const SnakeGame = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpda
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
         
         <div style={uiBarStyle}>
-          <h3 style={{ margin: 0, textShadow: `0 0 10px ${NeonColors.GREEN}` }}>SNAKE SCORE: {uiScore}</h3>
+          {/* ✅ AM SCHIMBAT AICI: Textul rămâne mereu SCORE, chiar dacă culoarea se schimbă în roșu */}
+          <h3 style={{ margin: 0, textShadow: `0 0 10px ${borderColor}`, color: glitchActiveUI ? NeonColors.RED : '#fff' }}>
+            SNAKE SCORE: {uiScore}
+          </h3>
           <RetroButton variant="green" onClick={onExit} style={{ width: 'auto', marginTop: 0, padding: '10px 20px' }}>
             EXIT
           </RetroButton>
@@ -197,8 +251,8 @@ const SnakeGame = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpda
 
         <div style={{ 
             position: 'relative', 
-            border: `4px solid ${NeonColors.GREEN}`,
-            boxShadow: `0 0 30px ${NeonColors.GREEN}`,
+            border: `4px solid ${borderColor}`,
+            boxShadow: `0 0 30px ${shadowColor}`,
             backgroundColor: '#000'
         }}>
           <canvas 

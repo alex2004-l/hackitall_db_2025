@@ -123,13 +123,14 @@ export default function SnakeMulti() {
       const hitWall = head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS;
       const hitSelf = snake.some((s) => s.x === head.x && s.y === head.y);
 
-      // 💀 LOGICA DE MOARTE (PENALIZARE -100)
+     
       if (hitWall || hitSelf) {
         setIsGameOver(true);
         myScoreRef.current -= 100; // Scădem 100 puncte
+        if (myScoreRef.current < 0) myScoreRef.current = 0;
 
         await updateDoc(doc(db, "rooms", roomId!), {
-          [isPlayer1 ? "player1.score" : "player2.score"]: myScoreRef.current, // Trimitem scorul penalizat
+          [isPlayer1 ? "player1.score" : "player2.score"]: myScoreRef.current,
           status: "gameover",
         });
         return;

@@ -188,7 +188,7 @@ const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
         if (obs.x + obs.w < 0) {
           obstacles.splice(i, 1);
           
-          activeScoreRef.current += 1; 
+          activeScoreRef.current += 50; 
           setUiScore(activeScoreRef.current);
           if (onScoreUpdate) { 
               onScoreUpdate();

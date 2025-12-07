@@ -77,8 +77,6 @@ const HomePage = ({ onStart }: HomePageProps) => {
           textShadow: `0 0 5px ${NeonColors.YELLOW}`,
           lineHeight: '1.8'
         }}>
-          <div>SCORE: 00000</div>
-          <div>HIGH SCORE: 99999</div>
         </div>
 
       </div>
