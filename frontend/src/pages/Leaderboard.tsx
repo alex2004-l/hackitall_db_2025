@@ -129,10 +129,10 @@ const Leaderboard = () => {
             gap: '10px', 
             marginBottom: '30px', 
             justifyContent: 'center',
-            // Remove overflowX: 'auto' and flexWrap: 'nowrap'
-            width: '100%', // Use full width of the implicit wrapper div
-            maxWidth: '700px', // Match the card width for alignment
-            padding: '0 40px', // Add padding to avoid hitting edges
+           
+            width: '100%', 
+            maxWidth: '700px', 
+            padding: '0 40px', 
             boxSizing: 'border-box'
       }}>
         {GAME_MODES.map((game) => (
@@ -143,9 +143,9 @@ const Leaderboard = () => {
             style={{ 
               padding: '8px 16px', 
               fontSize: '12px', 
-              flexGrow: 1, // <-- KEY CHANGE: Makes button expand to share space
-              flexShrink: 1, // Allows buttons to shrink if necessary
-              minWidth: '0' // Important for flexible shrinking
+              flexGrow: 1, 
+              flexShrink: 1, 
+              minWidth: '0' 
             }}
           >
             {game.name}

@@ -22,7 +22,7 @@ export default function SnakeMulti() {
   const myCanvasRef = useRef<HTMLCanvasElement>(null);
   const oppCanvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Start Positions
+  // start Positions
   const startPos = isPlayer1
     ? [{ x: 5, y: 10 }, { x: 4, y: 10 }, { x: 3, y: 10 }]
     : [{ x: 25, y: 10 }, { x: 26, y: 10 }, { x: 27, y: 10 }];
@@ -39,7 +39,7 @@ export default function SnakeMulti() {
   const [gameStatus, setGameStatus] = useState("waiting");
   const [isGameOver, setIsGameOver] = useState(false);
 
-  // 1️⃣ PLAYER 2 JOIN
+  // player 2 joins
   useEffect(() => {
     if (!roomId || isPlayer1) return;
 
@@ -58,7 +58,7 @@ export default function SnakeMulti() {
     joinGame();
   }, [roomId, isPlayer1]);
 
-  // 2️⃣ SYNC & GAME OVER CHECK
+  // sync room state
   useEffect(() => {
     if (!roomId) return;
 
@@ -69,20 +69,19 @@ export default function SnakeMulti() {
       setGameStatus(data.status);
       if (data.food) setFood(data.food);
 
-      // Sincronizare adversar
+      // sync opponent
       const opp = isPlayer1 ? data.player2 : data.player1;
       if (opp) {
         if (opp.snake) setOpponentSnake(opp.snake);
-        // Important: Sincronizăm scorul chiar și la Game Over
+        // sync score
         if (opp.score !== undefined) setOpponentScore(opp.score);
       }
 
-      // Dacă statusul e gameover, oprim tot
       if (data.status === "gameover") {
         setIsGameOver(true);
       }
 
-      // Auto-start
+      // auto-start
       if (isPlayer1 && data.status === "waiting" && data.player2) {
         updateDoc(doc(db, "rooms", roomId), { status: "playing" });
       }
@@ -91,7 +90,7 @@ export default function SnakeMulti() {
     return () => unsub();
   }, [roomId, isPlayer1]);
 
-  // 🔥 SPAWN FOOD
+  // spawn food
   const spawnFood = async () => {
     if (!roomId) return;
     let newFood = { x: 0, y: 0 };
@@ -108,7 +107,7 @@ export default function SnakeMulti() {
     updateDoc(doc(db, "rooms", roomId), { food: newFood });
   };
 
-  // 3️⃣ GAME LOOP
+  // game loop
   useEffect(() => {
     if (gameStatus !== "playing" || isGameOver) return;
 
@@ -119,14 +118,14 @@ export default function SnakeMulti() {
       head.x += myDirRef.current.x;
       head.y += myDirRef.current.y;
 
-      // Detectare Coliziuni
+      // detect collisions
       const hitWall = head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS;
       const hitSelf = snake.some((s) => s.x === head.x && s.y === head.y);
 
      
       if (hitWall || hitSelf) {
         setIsGameOver(true);
-        myScoreRef.current -= 100; // Scădem 100 puncte
+        myScoreRef.current -= 100; 
         if (myScoreRef.current < 0) myScoreRef.current = 0;
 
         await updateDoc(doc(db, "rooms", roomId!), {
@@ -138,7 +137,6 @@ export default function SnakeMulti() {
 
       snake.unshift(head);
 
-      // A mâncat?
       if (head.x === food.x && head.y === food.y) {
         myScoreRef.current += 10;
         updateDoc(doc(db, "rooms", roomId!), {
@@ -173,7 +171,7 @@ export default function SnakeMulti() {
     };
   }, [gameStatus, isGameOver, food]);
 
-  // 4️⃣ DRAWING
+  // drawing
   useEffect(() => {
     const draw = () => {
       const myCtx = myCanvasRef.current?.getContext("2d");
@@ -183,14 +181,14 @@ export default function SnakeMulti() {
         ctx.fillStyle = isMe ? "#050510" : "#100010";
         ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
-        // Grid
+        // grid
         ctx.strokeStyle = "rgba(0,255,0,0.1)";
         ctx.beginPath();
         for (let i = 0; i <= CANVAS_W; i += GRID_SIZE) { ctx.moveTo(i, 0); ctx.lineTo(i, CANVAS_H); }
         for (let i = 0; i <= CANVAS_H; i += GRID_SIZE) { ctx.moveTo(0, i); ctx.lineTo(CANVAS_W, i); }
         ctx.stroke();
 
-        // Food
+        // food
         if (food) {
           ctx.fillStyle = NeonColors.RED;
           ctx.shadowColor = NeonColors.RED;
@@ -199,7 +197,7 @@ export default function SnakeMulti() {
           ctx.shadowBlur = 0;
         }
 
-        // Snake
+        // snake
         snake.forEach((s, i) => {
           ctx.fillStyle = i === 0 ? "#fff" : color;
           ctx.shadowColor = color;
@@ -218,7 +216,6 @@ export default function SnakeMulti() {
     return () => cancelAnimationFrame(animId);
   }, [food, opponentSnake]);
 
-  // 🏆 Logică determinare câștigător
   const getWinnerMessage = () => {
     if (myScoreRef.current > opponentScore) return "YOU WON! 🏆";
     if (myScoreRef.current < opponentScore) return "YOU LOST 💀";

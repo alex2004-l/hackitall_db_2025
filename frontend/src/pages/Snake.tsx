@@ -34,10 +34,8 @@ const SnakeGame = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpda
   
   const gameRunningRef = useRef(true);
 
-  // 🔥 GLITCH STATE
-  const isGlitchingRef = useRef(false); // Ref pentru loop (fără re-render)
-  const [glitchActiveUI, setGlitchActiveUI] = useState(false); // State pentru border roșu
-
+  const isGlitchingRef = useRef(false); 
+  const [glitchActiveUI, setGlitchActiveUI] = useState(false); 
   const [uiScore, setUiScore] = useState(0);
   const [isGameOver, setIsGameOver] = useState(false);
 
@@ -148,10 +146,9 @@ const SnakeGame = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpda
           activeScoreRef.current += 50;
           setUiScore(activeScoreRef.current);
 
-          // 🔥 ACTIVARE GLITCH LA 40 PCT
-          if (activeScoreRef.current >= 40 && !isGlitchingRef.current) {
+          if (activeScoreRef.current >= 150 && !isGlitchingRef.current) {
             isGlitchingRef.current = true;
-            setGlitchActiveUI(true); // Doar schimbăm border-ul în roșu
+            setGlitchActiveUI(true); 
           }
 
           if (onScoreUpdate) {
@@ -163,11 +160,6 @@ const SnakeGame = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpda
         }
       }
 
-      // ==========================================
-      // 🔥 DESENARE CU EFECTE GLITCH
-      // ==========================================
-
-      // 1. Background (uneori flash rosu/alb daca e glitch)
       let bgCol = '#050510';
       if (isGlitchingRef.current && Math.random() > 0.95) {
          bgCol = Math.random() > 0.5 ? NeonColors.RED : '#ffffff';
@@ -175,16 +167,15 @@ const SnakeGame = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpda
       ctx.fillStyle = bgCol;
       ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-      ctx.save(); // Salvăm poziția normală
-
-      // 2. Screen Shake (Tremurat)
+      ctx.save(); 
+      
       if (isGlitchingRef.current && Math.random() > 0.6) {
         const shakeX = (Math.random() - 0.5) * 15; 
         const shakeY = (Math.random() - 0.5) * 15; 
         ctx.translate(shakeX, shakeY);
       }
 
-      // 3. Grid
+
       ctx.strokeStyle = 'rgba(0, 255, 0, 0.05)';
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -192,19 +183,16 @@ const SnakeGame = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpda
       for (let y = 0; y <= CANVAS_HEIGHT; y += GRID_SIZE) { ctx.moveTo(0, y); ctx.lineTo(CANVAS_WIDTH, y); }
       ctx.stroke();
 
-      // 4. Food & Snake
       drawRect(foodRef.current.x, foodRef.current.y, NeonColors.PINK);
 
       snakeRef.current.forEach((seg, index) => {
         let color = index === 0 ? '#fff' : NeonColors.GREEN;
-        // Uneori șarpele devine roșu pentru o fracțiune de secundă
         if (isGlitchingRef.current && Math.random() > 0.95) color = NeonColors.RED;
         drawRect(seg.x, seg.y, color, true);
       });
 
-      ctx.restore(); // Revenim la poziția normală
+      ctx.restore();
 
-      // 5. Artefacte "Static Noise" (linii peste ecran)
       if (isGlitchingRef.current && Math.random() > 0.8) {
           ctx.fillStyle = `rgba(255, 255, 255, ${Math.random() * 0.2})`;
           const h = Math.random() * 20 + 2;
@@ -223,7 +211,6 @@ const SnakeGame = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpda
     };
   }, [externalScoreRef, activeScoreRef, onScoreUpdate]); 
 
-  // Stiluri dinamice pentru UI
   const borderColor = glitchActiveUI ? NeonColors.RED : NeonColors.GREEN;
   const shadowColor = glitchActiveUI ? NeonColors.RED : NeonColors.GREEN;
 
@@ -242,7 +229,6 @@ const SnakeGame = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpda
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
         
         <div style={uiBarStyle}>
-          {/* ✅ AM SCHIMBAT AICI: Textul rămâne mereu SCORE, chiar dacă culoarea se schimbă în roșu */}
           <h3 style={{ margin: 0, textShadow: `0 0 10px ${borderColor}`, color: glitchActiveUI ? NeonColors.RED : '#fff' }}>
             SNAKE SCORE: {uiScore}
           </h3>

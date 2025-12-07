@@ -9,30 +9,29 @@ const MultiplayerLobby = () => {
   const navigate = useNavigate();
   const [roomIdInput, setRoomIdInput] = useState('');
   
-  // 1. CREARE CAMERĂ
+  // create room
   const createRoom = async () => {
     const user = auth.currentUser;
     if (!user) return;
 
-    // Inițializăm camera
+    // add room
     const roomRef = await addDoc(collection(db, "rooms"), {
       status: 'waiting',
       createdAt: new Date(),
       player1: {
         uid: user.uid,
         email: user.email,
-        snake: [{x: 5, y: 5}, {x: 4, y: 5}], // Poziții start
+        snake: [{x: 5, y: 5}, {x: 4, y: 5}], 
         score: 0
       },
-      // Player 2 e null momentan
+      // player 2 is null
       player2: null 
     });
 
-    // Mergem în joc cu ID-ul camerei și rolul de 'host'
     navigate(`/game/snake-multi/${roomRef.id}?role=host`);
   };
 
-  // 2. JOIN CAMERĂ
+  // join room
   const joinRoom = async () => {
     const user = auth.currentUser;
     if (!user || !roomIdInput) return;
@@ -41,13 +40,13 @@ const MultiplayerLobby = () => {
     const roomSnap = await getDoc(roomRef);
 
     if (roomSnap.exists() && roomSnap.data().status === 'waiting') {
-      // Intrăm ca Player 2
+      // player 2 joins
       await updateDoc(roomRef, {
-        status: 'playing', // Începe jocul!
+        status: 'playing',
         player2: {
           uid: user.uid,
           email: user.email,
-          snake: [{x: 20, y: 20}, {x: 21, y: 20}], // Start opus
+          snake: [{x: 20, y: 20}, {x: 21, y: 20}], 
           score: 0
         }
       });

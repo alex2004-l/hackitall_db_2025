@@ -198,10 +198,10 @@ const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
         }
 
         // check collisions
-        const dinoX = 20; 
+        const dinoX = 50; 
         const dinoY = dinoYRef.current;
         
-        const COLLISION_PADDING = 5;
+        const COLLISION_PADDING = 30;
 
         if (
           dinoX + COLLISION_PADDING < obs.x + obs.w && 
