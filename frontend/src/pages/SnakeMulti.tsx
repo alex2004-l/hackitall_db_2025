@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
-import { doc, onSnapshot, updateDoc } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc, getDoc } from "firebase/firestore";
 import { db } from "../firebaseClient";
 
 import { RetroBackground } from "../components/RetroBackground";
@@ -11,7 +11,7 @@ const CANVAS_W = 800;
 const CANVAS_H = 600;
 const COLS = CANVAS_W / GRID_SIZE;
 const ROWS = CANVAS_H / GRID_SIZE;
-const GAME_SPEED = 150;
+const GAME_SPEED = 150; // Viteza jocului (mai mic = mai rapid)
 
 export default function SnakeMulti() {
   const { roomId } = useParams();
@@ -23,20 +23,50 @@ export default function SnakeMulti() {
   const myCanvasRef = useRef<HTMLCanvasElement>(null);
   const oppCanvasRef = useRef<HTMLCanvasElement>(null);
 
-  // snake state local
-  const mySnakeRef = useRef([{ x: 10, y: 10 }]);
-  const myDirRef = useRef({ x: 1, y: 0 });
+  // 🔥 CONFIGURARE INIȚIALĂ (Player 1 Stânga, Player 2 Dreapta)
+  const startPos = isPlayer1
+    ? [{ x: 5, y: 10 }, { x: 4, y: 10 }, { x: 3, y: 10 }]
+    : [{ x: 25, y: 10 }, { x: 26, y: 10 }, { x: 27, y: 10 }];
+
+  const startDir = isPlayer1 ? { x: 1, y: 0 } : { x: -1, y: 0 };
+
+  // snake state local (Ref pentru viteză maximă fără re-render)
+  const mySnakeRef = useRef(startPos);
+  const myDirRef = useRef(startDir);
   const myScoreRef = useRef(0);
 
   // state primit din Firebase
-  const [opponentSnake, setOpponentSnake] = useState([{ x: 10, y: 10 }]);
+  const [opponentSnake, setOpponentSnake] = useState([{ x: -1, y: -1 }]); // Ascuns inițial
   const [opponentScore, setOpponentScore] = useState(0);
   const [food, setFood] = useState({ x: 15, y: 10 });
   const [gameStatus, setGameStatus] = useState("waiting");
-
   const [isGameOver, setIsGameOver] = useState(false);
 
-  // 🔥 Sincronizare Firebase + AUTO START
+  // 1️⃣ LOGICĂ PLAYER 2: Se anunță în DB când intră
+  useEffect(() => {
+    if (!roomId || isPlayer1) return;
+
+    const joinGame = async () => {
+      const docRef = doc(db, "rooms", roomId);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        // Dacă nu exist în DB, mă scriu
+        if (!data.player2) {
+          await updateDoc(docRef, {
+            player2: {
+              snake: startPos,
+              score: 0,
+              dir: startDir,
+            },
+          });
+        }
+      }
+    };
+    joinGame();
+  }, [roomId, isPlayer1]);
+
+  // 2️⃣ LOGICĂ PLAYER 1 (HOST): Detectează Player 2 și dă START
   useEffect(() => {
     if (!roomId) return;
 
@@ -45,170 +75,177 @@ export default function SnakeMulti() {
       const data = snap.data();
 
       setGameStatus(data.status);
-      setFood(data.food);
+      if (data.food) setFood(data.food);
 
+      // Actualizăm adversarul
       const opp = isPlayer1 ? data.player2 : data.player1;
       if (opp) {
         if (opp.snake) setOpponentSnake(opp.snake);
         if (opp.score !== undefined) setOpponentScore(opp.score);
       }
 
-      // ✅ LOGICA NOUĂ: Dacă ești Host și a intrat Player 2, pornește jocul
+      // Host-ul pornește meciul dacă vede Player 2
       if (isPlayer1 && data.status === "waiting" && data.player2) {
-        updateDoc(doc(db, "rooms", roomId), {
-          status: "playing",
-        }).catch((err) => console.error("Error starting game:", err));
+        updateDoc(doc(db, "rooms", roomId), { status: "playing" });
       }
     });
 
     return () => unsub();
   }, [roomId, isPlayer1]);
 
-  // 🔥 Spawn food random (doar host)
+  // 🔥 SPAWN FOOD (Doar Host)
   const spawnFood = async () => {
     if (!roomId) return;
     let newFood = { x: 0, y: 0 };
+    // Încercăm să nu punem mâncarea pe șarpele meu
     while (true) {
       newFood = {
         x: Math.floor(Math.random() * (COLS - 2)) + 1,
         y: Math.floor(Math.random() * (ROWS - 2)) + 1,
       };
-      // Verificăm să nu fie pe șarpele nostru (ideal ar fi să verificăm și opponentul)
-      if (!mySnakeRef.current.some((s) => s.x === newFood.x && s.y === newFood.y)) break;
+      const onSnake = mySnakeRef.current.some(
+        (s) => s.x === newFood.x && s.y === newFood.y
+      );
+      if (!onSnake) break;
     }
-
-    await updateDoc(doc(db, "rooms", roomId), { food: newFood });
+    // Update non-blocking (fără await)
+    updateDoc(doc(db, "rooms", roomId), { food: newFood });
   };
 
-  // 🔥 Logica de joc
+  // 3️⃣ GAME LOOP (Aici e mișcarea)
   useEffect(() => {
     if (gameStatus !== "playing" || isGameOver) return;
-    if (!roomId) return;
 
-    const move = async () => {
+    const move = () => {
       const snake = [...mySnakeRef.current];
       const head = { ...snake[0] };
 
       head.x += myDirRef.current.x;
       head.y += myDirRef.current.y;
 
-      // ❗ Game Over – perete
+      // COLIZIUNE PERETE
       if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) {
         setIsGameOver(true);
-        await updateDoc(doc(db, "rooms", roomId), {
-          [isPlayer1 ? "player1.score" : "player2.score"]: myScoreRef.current,
-          status: "gameover", // Poți scoate asta dacă vrei ca celălalt să continue
-        });
+        updateDoc(doc(db, "rooms", roomId!), { status: "gameover" });
         return;
       }
 
-      // ❗ Game Over – self collision
-      if (snake.some((seg) => seg.x === head.x && seg.y === head.y)) {
+      // COLIZIUNE CU SINE
+      if (snake.some((s) => s.x === head.x && s.y === head.y)) {
         setIsGameOver(true);
-        await updateDoc(doc(db, "rooms", roomId), {
-          [isPlayer1 ? "player1.score" : "player2.score"]: myScoreRef.current,
-          status: "gameover",
-        });
+        updateDoc(doc(db, "rooms", roomId!), { status: "gameover" });
         return;
       }
 
       snake.unshift(head);
 
-      // 🔥 A mâncat?
+      // A MÂNCAT?
       if (head.x === food.x && head.y === food.y) {
         myScoreRef.current += 10;
-
-        await updateDoc(doc(db, "rooms", roomId), {
+        updateDoc(doc(db, "rooms", roomId!), {
           [isPlayer1 ? "player1.score" : "player2.score"]: myScoreRef.current,
         });
-
-        if (isPlayer1) await spawnFood();
+        if (isPlayer1) spawnFood();
       } else {
         snake.pop();
       }
 
+      // Actualizăm ref-ul local (pentru desenare instantă)
       mySnakeRef.current = snake;
 
-      await updateDoc(doc(db, "rooms", roomId), {
+      // Trimitem la Firebase (fără await, să nu sacadeze)
+      updateDoc(doc(db, "rooms", roomId!), {
         [isPlayer1 ? "player1.snake" : "player2.snake"]: snake,
-      });
+      }).catch((e) => console.log("Lag sync:", e));
     };
 
     const interval = setInterval(move, GAME_SPEED);
 
-    const controls = (e: KeyboardEvent) => {
+    // CONTROLS
+    const handleKey = (e: KeyboardEvent) => {
       const { x, y } = myDirRef.current;
       if (e.key === "ArrowUp" && y === 0) myDirRef.current = { x: 0, y: -1 };
       if (e.key === "ArrowDown" && y === 0) myDirRef.current = { x: 0, y: 1 };
       if (e.key === "ArrowLeft" && x === 0) myDirRef.current = { x: -1, y: 0 };
       if (e.key === "ArrowRight" && x === 0) myDirRef.current = { x: 1, y: 0 };
     };
-
-    window.addEventListener("keydown", controls);
+    window.addEventListener("keydown", handleKey);
 
     return () => {
       clearInterval(interval);
-      window.removeEventListener("keydown", controls);
+      window.removeEventListener("keydown", handleKey);
     };
-  }, [gameStatus, isGameOver, roomId, isPlayer1, food]);
+  }, [gameStatus, isGameOver, food]); // Scoatem roomId/isPlayer1 din dependințe ca să nu reseteze intervalul aiurea
 
-  // 🔥 Desenare Retro
-  const drawGrid = (ctx: CanvasRenderingContext2D) => {
-    ctx.strokeStyle = "rgba(0,255,0,0.05)";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    for (let x = 0; x < CANVAS_W; x += GRID_SIZE) {
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, CANVAS_H);
-    }
-    for (let y = 0; y < CANVAS_H; y += GRID_SIZE) {
-      ctx.moveTo(0, y);
-      ctx.lineTo(CANVAS_W, y);
-    }
-    ctx.stroke();
-  };
-
-  const drawCell = (ctx: CanvasRenderingContext2D, x: number, y: number, color: string) => {
-    ctx.fillStyle = color;
-    ctx.shadowColor = color;
-    ctx.shadowBlur = 10;
-    ctx.fillRect(x * GRID_SIZE + 1, y * GRID_SIZE + 1, GRID_SIZE - 2, GRID_SIZE - 2);
-    ctx.shadowBlur = 0;
-  };
-
-  // 🔥 Render Loop
+  // 4️⃣ DESENARE (60 FPS)
   useEffect(() => {
-    const loop = () => {
+    const draw = () => {
       const myCtx = myCanvasRef.current?.getContext("2d");
       const oppCtx = oppCanvasRef.current?.getContext("2d");
 
-      if (myCtx) {
-        myCtx.fillStyle = "#050510";
-        myCtx.fillRect(0, 0, CANVAS_W, CANVAS_H);
-        drawGrid(myCtx);
-        drawCell(myCtx, food.x, food.y, NeonColors.PINK);
+      // Funcție helper desenare
+      const paint = (
+        ctx: CanvasRenderingContext2D,
+        snake: any[],
+        color: string,
+        isMe: boolean
+      ) => {
+        ctx.fillStyle = isMe ? "#050510" : "#100010"; // Background diferit
+        ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
-        mySnakeRef.current.forEach((s, i) =>
-          drawCell(myCtx, s.x, s.y, i === 0 ? "#fff" : NeonColors.GREEN)
-        );
-      }
+        // Grid
+        ctx.strokeStyle = "rgba(0,255,0,0.1)";
+        ctx.beginPath();
+        for (let i = 0; i <= CANVAS_W; i += GRID_SIZE) {
+          ctx.moveTo(i, 0);
+          ctx.lineTo(i, CANVAS_H);
+        }
+        for (let i = 0; i <= CANVAS_H; i += GRID_SIZE) {
+          ctx.moveTo(0, i);
+          ctx.lineTo(CANVAS_W, i);
+        }
+        ctx.stroke();
 
-      if (oppCtx) {
-        oppCtx.fillStyle = "#100010";
-        oppCtx.fillRect(0, 0, CANVAS_W, CANVAS_H);
-        drawGrid(oppCtx);
-        drawCell(oppCtx, food.x, food.y, NeonColors.PINK);
+        // Food
+        if (food) {
+          ctx.fillStyle = NeonColors.RED;
+          ctx.shadowColor = NeonColors.RED;
+          ctx.shadowBlur = 15;
+          ctx.fillRect(
+            food.x * GRID_SIZE + 2,
+            food.y * GRID_SIZE + 2,
+            GRID_SIZE - 4,
+            GRID_SIZE - 4
+          );
+          ctx.shadowBlur = 0;
+        }
 
-        opponentSnake.forEach((s, i) =>
-          drawCell(oppCtx, s.x, s.y, i === 0 ? "#fff" : NeonColors.PINK)
-        );
-      }
+        // Snake
+        snake.forEach((s, i) => {
+          ctx.fillStyle = i === 0 ? "#fff" : color; // Cap alb
+          ctx.shadowColor = color;
+          ctx.shadowBlur = i === 0 ? 15 : 5;
+          ctx.fillRect(
+            s.x * GRID_SIZE + 1,
+            s.y * GRID_SIZE + 1,
+            GRID_SIZE - 2,
+            GRID_SIZE - 2
+          );
+          ctx.shadowBlur = 0;
+        });
+      };
 
-      requestAnimationFrame(loop);
+      if (myCtx)
+        paint(myCtx, mySnakeRef.current, NeonColors.GREEN, true);
+      if (oppCtx)
+        paint(oppCtx, opponentSnake, NeonColors.PINK, false);
+
+      requestAnimationFrame(draw);
     };
 
-    requestAnimationFrame(loop);
-  }, [food, opponentSnake]);
+    const animId = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(animId);
+  }, [food, opponentSnake]); // Redesenează când se schimbă mâncarea sau oponentul
 
   return (
     <RetroBackground>
@@ -217,114 +254,128 @@ export default function SnakeMulti() {
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          paddingTop: 20,
           height: "100vh",
+          padding: 20,
         }}
       >
-        {/* Top Bar */}
+        {/* SCORE BAR */}
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
-            width: "80%",
-            background: "rgba(0,20,0,0.8)",
-            padding: "10px 20px",
+            width: "90%",
+            maxWidth: 1200,
+            background: "#000",
+            border: `2px solid ${NeonColors.GREEN}`,
+            padding: 15,
             marginBottom: 20,
-            borderRadius: 10,
             color: "#fff",
-            border: `3px solid ${NeonColors.GREEN}`,
+            fontFamily: '"Press Start 2P", monospace',
           }}
         >
           <div>ROOM: {roomId}</div>
           <div
             style={{
-              color: gameStatus === "playing" ? NeonColors.GREEN : NeonColors.YELLOW,
+              color:
+                gameStatus === "playing" ? NeonColors.GREEN : NeonColors.YELLOW,
             }}
           >
-            {gameStatus === "playing" ? "LIVE MATCH" : "WAITING OPPONENT..."}
+            {gameStatus === "playing" ? "🟢 LIVE MATCH" : "🟡 WAITING..."}
           </div>
-          <RetroButton onClick={() => navigate("/dashboard")}>EXIT</RetroButton>
+          <RetroButton onClick={() => navigate("/dashboard")}>
+            EXIT
+          </RetroButton>
         </div>
 
-        {/* 🔥 ECRANE LÂNGĂ LÂNGĂ */}
+        {/* GAME AREA */}
         <div
           style={{
             display: "flex",
-            flexDirection: "row",
-            gap: 40,
+            gap: 20,
             justifyContent: "center",
-            alignItems: "flex-start",
-            width: "100%",
+            alignItems: "center",
           }}
         >
-          {/* ECRANUL TĂU */}
-          <div style={{ textAlign: "center" }}>
-            <h3
+          {/* MY SCREEN */}
+          <div>
+            <div
               style={{
                 color: NeonColors.GREEN,
+                textAlign: "center",
+                marginBottom: 10,
                 fontFamily: '"Press Start 2P"',
               }}
             >
               YOU ({myScoreRef.current})
-            </h3>
-
+            </div>
             <canvas
               ref={myCanvasRef}
               width={CANVAS_W}
               height={CANVAS_H}
               style={{
-                border: `6px solid ${NeonColors.GREEN}`,
-                boxShadow: `0 0 20px ${NeonColors.GREEN}`,
+                border: `4px solid ${NeonColors.GREEN}`,
+                background: "#000",
+                width: "600px", // Scalare CSS pt ecrane mai mici
+                height: "450px",
               }}
             />
           </div>
 
-          {/* VS */}
+          {/* VS SEPARATOR */}
           <div
             style={{
-              fontSize: 50,
               color: "#fff",
+              fontSize: 30,
               fontFamily: '"Press Start 2P"',
-              textShadow: "0 0 10px #fff",
-              marginTop: CANVAS_H / 2 - 25,
             }}
           >
             VS
           </div>
 
-          {/* ECRANUL ADVERSARULUI */}
-          <div style={{ textAlign: "center" }}>
-            <h3
+          {/* OPPONENT SCREEN */}
+          <div>
+            <div
               style={{
                 color: NeonColors.PINK,
+                textAlign: "center",
+                marginBottom: 10,
                 fontFamily: '"Press Start 2P"',
               }}
             >
               OPPONENT ({opponentScore})
-            </h3>
-
+            </div>
             <canvas
               ref={oppCanvasRef}
               width={CANVAS_W}
               height={CANVAS_H}
               style={{
-                border: `6px solid ${NeonColors.PINK}`,
-                boxShadow: `0 0 20px ${NeonColors.PINK}`,
+                border: `4px solid ${NeonColors.PINK}`,
+                background: "#000",
+                width: "600px",
+                height: "450px",
               }}
             />
           </div>
         </div>
 
         {isGameOver && (
-          <h1
+          <div
             style={{
-              color: NeonColors.RED,
-              marginTop: 40,
-              fontFamily: '"Press Start 2P"',
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              background: "rgba(0,0,0,0.9)",
+              padding: 40,
+              border: `5px solid ${NeonColors.RED}`,
+              textAlign: "center",
             }}
           >
-            GAME OVER
-          </h1>
+            <h1 style={{ color: NeonColors.RED, fontSize: 40 }}>GAME OVER</h1>
+            <RetroButton onClick={() => window.location.reload()}>
+              REMATCH
+            </RetroButton>
+          </div>
         )}
       </div>
     </RetroBackground>
