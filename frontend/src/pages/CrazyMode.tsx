@@ -48,7 +48,7 @@ const styles: Record<string, React.CSSProperties> = {
 
 const CrazyMode = ({ onModeEnd }: CrazyModeProps) => {
     const [currentScore, setCurrentScore] = useState(0);
-    const [timeLeft, setTimeLeft] = useState(30);
+    const [timeLeft, setTimeLeft] = useState(10);
     const [currentGameIndex, setCurrentGameIndex] = useState(Math.floor(Math.random() * games.length));
     const [gameKey, setGameKey] = useState(0); 
     
