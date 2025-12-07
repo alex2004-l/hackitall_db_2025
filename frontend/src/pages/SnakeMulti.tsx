@@ -36,7 +36,7 @@ export default function SnakeMulti() {
 
   const [isGameOver, setIsGameOver] = useState(false);
 
-  // 🔥 Sincronizare Firebase
+  // 🔥 Sincronizare Firebase + AUTO START
   useEffect(() => {
     if (!roomId) return;
 
@@ -52,6 +52,13 @@ export default function SnakeMulti() {
         if (opp.snake) setOpponentSnake(opp.snake);
         if (opp.score !== undefined) setOpponentScore(opp.score);
       }
+
+      // ✅ LOGICA NOUĂ: Dacă ești Host și a intrat Player 2, pornește jocul
+      if (isPlayer1 && data.status === "waiting" && data.player2) {
+        updateDoc(doc(db, "rooms", roomId), {
+          status: "playing",
+        }).catch((err) => console.error("Error starting game:", err));
+      }
     });
 
     return () => unsub();
@@ -59,16 +66,18 @@ export default function SnakeMulti() {
 
   // 🔥 Spawn food random (doar host)
   const spawnFood = async () => {
+    if (!roomId) return;
     let newFood = { x: 0, y: 0 };
     while (true) {
       newFood = {
         x: Math.floor(Math.random() * (COLS - 2)) + 1,
         y: Math.floor(Math.random() * (ROWS - 2)) + 1,
       };
+      // Verificăm să nu fie pe șarpele nostru (ideal ar fi să verificăm și opponentul)
       if (!mySnakeRef.current.some((s) => s.x === newFood.x && s.y === newFood.y)) break;
     }
 
-    await updateDoc(doc(db, "rooms", roomId!), { food: newFood });
+    await updateDoc(doc(db, "rooms", roomId), { food: newFood });
   };
 
   // 🔥 Logica de joc
@@ -88,7 +97,7 @@ export default function SnakeMulti() {
         setIsGameOver(true);
         await updateDoc(doc(db, "rooms", roomId), {
           [isPlayer1 ? "player1.score" : "player2.score"]: myScoreRef.current,
-          status: "gameover",
+          status: "gameover", // Poți scoate asta dacă vrei ca celălalt să continue
         });
         return;
       }
@@ -141,7 +150,7 @@ export default function SnakeMulti() {
       clearInterval(interval);
       window.removeEventListener("keydown", controls);
     };
-  }, [gameStatus, isGameOver, roomId, isPlayer1]);
+  }, [gameStatus, isGameOver, roomId, isPlayer1, food]);
 
   // 🔥 Desenare Retro
   const drawGrid = (ctx: CanvasRenderingContext2D) => {
@@ -232,7 +241,7 @@ export default function SnakeMulti() {
               color: gameStatus === "playing" ? NeonColors.GREEN : NeonColors.YELLOW,
             }}
           >
-            {gameStatus === "playing" ? "LIVE MATCH" : "WAITING OPPONENT"}
+            {gameStatus === "playing" ? "LIVE MATCH" : "WAITING OPPONENT..."}
           </div>
           <RetroButton onClick={() => navigate("/dashboard")}>EXIT</RetroButton>
         </div>
@@ -277,6 +286,7 @@ export default function SnakeMulti() {
               color: "#fff",
               fontFamily: '"Press Start 2P"',
               textShadow: "0 0 10px #fff",
+              marginTop: CANVAS_H / 2 - 25,
             }}
           >
             VS
