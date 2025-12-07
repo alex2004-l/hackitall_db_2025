@@ -73,10 +73,11 @@ export default function SnakeMulti() {
       const opp = isPlayer1 ? data.player2 : data.player1;
       if (opp) {
         if (opp.snake) setOpponentSnake(opp.snake);
+        // Important: Sincronizăm scorul chiar și la Game Over
         if (opp.score !== undefined) setOpponentScore(opp.score);
       }
 
-      // ✅ FIX: Dacă statusul e gameover în DB, oprim jocul la ambii
+      // Dacă statusul e gameover, oprim tot
       if (data.status === "gameover") {
         setIsGameOver(true);
       }
@@ -90,7 +91,7 @@ export default function SnakeMulti() {
     return () => unsub();
   }, [roomId, isPlayer1]);
 
-  // 🔥 SPAWN FOOD (Oricine poate apela asta)
+  // 🔥 SPAWN FOOD
   const spawnFood = async () => {
     if (!roomId) return;
     let newFood = { x: 0, y: 0 };
@@ -99,7 +100,6 @@ export default function SnakeMulti() {
         x: Math.floor(Math.random() * (COLS - 2)) + 1,
         y: Math.floor(Math.random() * (ROWS - 2)) + 1,
       };
-      // Simplu check coliziune cu mine (acceptabil pt viteză)
       const onSnake = mySnakeRef.current.some(
         (s) => s.x === newFood.x && s.y === newFood.y
       );
@@ -112,32 +112,38 @@ export default function SnakeMulti() {
   useEffect(() => {
     if (gameStatus !== "playing" || isGameOver) return;
 
-    const move = () => {
+    const move = async () => {
       const snake = [...mySnakeRef.current];
       const head = { ...snake[0] };
 
       head.x += myDirRef.current.x;
       head.y += myDirRef.current.y;
 
-      // Coliziuni
+      // Detectare Coliziuni
       const hitWall = head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS;
       const hitSelf = snake.some((s) => s.x === head.x && s.y === head.y);
 
+      // 💀 LOGICA DE MOARTE (PENALIZARE -100)
       if (hitWall || hitSelf) {
         setIsGameOver(true);
-        updateDoc(doc(db, "rooms", roomId!), { status: "gameover" });
+        myScoreRef.current -= 100; // Scădem 100 puncte
+
+        await updateDoc(doc(db, "rooms", roomId!), {
+          [isPlayer1 ? "player1.score" : "player2.score"]: myScoreRef.current, // Trimitem scorul penalizat
+          status: "gameover",
+        });
         return;
       }
 
       snake.unshift(head);
 
-      // ✅ FIX: Oricine mănâncă generează mâncarea nouă
+      // A mâncat?
       if (head.x === food.x && head.y === food.y) {
         myScoreRef.current += 10;
         updateDoc(doc(db, "rooms", roomId!), {
           [isPlayer1 ? "player1.score" : "player2.score"]: myScoreRef.current,
         });
-        spawnFood(); // <--- ACUM SE APELEAZĂ DE ORICINE MĂNÂNCĂ
+        spawnFood();
       } else {
         snake.pop();
       }
@@ -146,7 +152,7 @@ export default function SnakeMulti() {
 
       updateDoc(doc(db, "rooms", roomId!), {
         [isPlayer1 ? "player1.snake" : "player2.snake"]: snake,
-      }).catch(() => {}); 
+      }).catch(() => {});
     };
 
     const interval = setInterval(move, GAME_SPEED);
@@ -164,7 +170,7 @@ export default function SnakeMulti() {
       clearInterval(interval);
       window.removeEventListener("keydown", handleKey);
     };
-  }, [gameStatus, isGameOver, food]); 
+  }, [gameStatus, isGameOver, food]);
 
   // 4️⃣ DRAWING
   useEffect(() => {
@@ -211,6 +217,13 @@ export default function SnakeMulti() {
     return () => cancelAnimationFrame(animId);
   }, [food, opponentSnake]);
 
+  // 🏆 Logică determinare câștigător
+  const getWinnerMessage = () => {
+    if (myScoreRef.current > opponentScore) return "YOU WON! 🏆";
+    if (myScoreRef.current < opponentScore) return "YOU LOST 💀";
+    return "DRAW 🤝";
+  };
+
   return (
     <RetroBackground>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", height: "100vh", padding: 20 }}>
@@ -238,12 +251,14 @@ export default function SnakeMulti() {
 
         {/* GAME OVER MODAL */}
         {isGameOver && (
-          <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.85)", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", zIndex: 100 }}>
-            <h1 style={{ color: NeonColors.RED, fontSize: 60, fontFamily: '"Press Start 2P"', marginBottom: 40, textShadow: "0 0 20px red" }}>GAME OVER</h1>
-            <div style={{ display: "flex", gap: 20 }}>
-               <RetroButton onClick={() => window.location.reload()}>REMATCH</RetroButton>
-               <RetroButton onClick={() => navigate("/dashboard")}>EXIT</RetroButton>
-            </div>
+          <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.9)", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", zIndex: 100 }}>
+            <h1 style={{ color: myScoreRef.current > opponentScore ? NeonColors.GREEN : NeonColors.RED, fontSize: 50, fontFamily: '"Press Start 2P"', marginBottom: 20, textAlign: "center", lineHeight: "1.5em" }}>
+              {getWinnerMessage()}
+            </h1>
+            <h2 style={{ color: "#fff", fontFamily: '"Press Start 2P"', fontSize: 20, marginBottom: 40 }}>
+              FINAL SCORE: {myScoreRef.current} - {opponentScore}
+            </h2>
+            <RetroButton onClick={() => navigate("/dashboard")}>EXIT TO LOBBY</RetroButton>
           </div>
         )}
       </div>
