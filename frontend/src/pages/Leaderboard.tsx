@@ -113,7 +113,7 @@ const Leaderboard = () => {
           
           <RetroTitle size="24px" color={NeonColors.RED}>CRAZY MODE CHAMPIONS</RetroTitle>
           <p style={{ color: '#aaa', fontSize: '10px', marginBottom: '30px', textTransform: 'uppercase' }}>
-            CLICK PE NUME PENTRU PROFIL
+            CLICK ON A NAME TO VIEW PROFILE
           </p>
 
           {errorMsg ? (
@@ -134,7 +134,7 @@ const Leaderboard = () => {
                   {scores.length === 0 ? (
                     <tr>
                       <td colSpan={3} style={{ padding: '30px', textAlign: 'center', color: '#666' }}>
-                        NICIUN RECORD VALID GĂSIT.
+                        NO SCORES AVAILABLE
                       </td>
                     </tr>
                   ) : (
