@@ -12,7 +12,6 @@ const HomePage = ({ onStart }: HomePageProps) => {
     if (onStart) onStart();
   }, [onStart]);
 
-  // Ascultăm tasta ENTER sau SPACE pentru start
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Enter" || e.key === " ") {
@@ -36,15 +35,13 @@ const HomePage = ({ onStart }: HomePageProps) => {
         textAlign: 'center',
         zIndex: 10
       }}>
-        
-        {/* Titlul Principal */}
+
         <div style={{ marginBottom: '20px' }}>
            <RetroTitle size="3.5rem" color={NeonColors.GREEN}>
              RETRO ARCADE
            </RetroTitle>
         </div>
 
-        {/* Subtitlu */}
         <p style={{
           color: NeonColors.GREEN,
           fontSize: '0.8rem',
@@ -56,7 +53,6 @@ const HomePage = ({ onStart }: HomePageProps) => {
           INSERT COIN • PRESS START
         </p>
 
-        {/* Butonul de Start Mare */}
         <div style={{ width: '300px' }}>
           <RetroButton 
             variant="green" 
@@ -71,7 +67,6 @@ const HomePage = ({ onStart }: HomePageProps) => {
           </RetroButton>
         </div>
 
-        {/* Display Scor (Decorativ) */}
         <div style={{
           position: 'absolute',
           bottom: '30px',
@@ -88,7 +83,6 @@ const HomePage = ({ onStart }: HomePageProps) => {
 
       </div>
 
-      {/* Injectăm stilul pentru blink doar aici */}
       <style>{`
         @keyframes blink { 
           0%, 100% { opacity: 1; } 

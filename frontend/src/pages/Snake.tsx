@@ -4,13 +4,12 @@ import { RetroButton, NeonColors } from '../components/RetroUI';
 
 type Point = { x: number, y: number };
 
-// Configurări Joc
 const GRID_SIZE = 25; 
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
 const COLS = CANVAS_WIDTH / GRID_SIZE;
 const ROWS = CANVAS_HEIGHT / GRID_SIZE;
-const GAME_SPEED = 150; // Timpul între mișcări (ms)
+const GAME_SPEED = 150; 
 
 type ScoreRef = {
     current: number;
@@ -19,25 +18,22 @@ type ScoreRef = {
 type GameProps = {
   onGameOver: (score: number) => void;
   onExit: () => void;
-  scoreRef?: ScoreRef; // Ref-ul de scor din Crazy Mode (opțional)
-  onScoreUpdate?: () => void; // Callback pentru actualizarea scorului total
+  scoreRef?: ScoreRef;
+  onScoreUpdate?: () => void; 
 };
 
-// MODIFICARE: Destructurăm prop-urile și redenumim scoreRef la externalScoreRef
 const SnakeGame = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }: GameProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
-  // Stare Logică 
   const snakeRef = useRef<Point[]>([{ x: 10, y: 10 }]); 
   const foodRef = useRef<Point>({ x: 15, y: 10 });
-  const directionRef = useRef<Point>({ x: 1, y: 0 }); // Direcția curentă
+  const directionRef = useRef<Point>({ x: 1, y: 0 }); 
   
-  const localScoreRef = useRef(0); // Ref intern (fallback)
-  const activeScoreRef = externalScoreRef || localScoreRef; // Ref-ul care va fi folosit
+  const localScoreRef = useRef(0); 
+  const activeScoreRef = externalScoreRef || localScoreRef;
   
   const gameRunningRef = useRef(true);
 
-  // Stare UI
   const [uiScore, setUiScore] = useState(0);
   const [isGameOver, setIsGameOver] = useState(false);
 
@@ -47,11 +43,9 @@ const SnakeGame = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpda
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Resetare joc
     snakeRef.current = [{ x: 5, y: 5 }, { x: 4, y: 5 }, { x: 3, y: 5 }];
     directionRef.current = { x: 1, y: 0 };
     
-    // Resetăm scorul DOAR dacă suntem în modul normal
     if (!externalScoreRef) {
         activeScoreRef.current = 0;
     }
@@ -59,7 +53,6 @@ const SnakeGame = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpda
     gameRunningRef.current = true;
     spawnFood();
 
-    // Controale - Aplică direcția imediat
     const handleKeyDown = (e: KeyboardEvent) => {
       const { x, y } = directionRef.current;
       
@@ -76,7 +69,6 @@ const SnakeGame = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpda
     };
     window.addEventListener('keydown', handleKeyDown);
 
-    // Funcție random pentru mâncare (Rămâne la fel)
     function spawnFood() {
       let newFood: Point = { x: 0, y: 0 };
       let isOnSnake = false;
@@ -89,21 +81,18 @@ const SnakeGame = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpda
           x: Math.floor(Math.random() * spawnCols) + 1, 
           y: Math.floor(Math.random() * spawnRows) + 1
         };
-        // eslint-disable-next-line no-loop-func
         isOnSnake = snakeRef.current.some(seg => seg.x === newFood.x && seg.y === newFood.y);
       } while (isOnSnake);
       
       foodRef.current = newFood;
     }
 
-    // MODIFICARE: Folosim activeScoreRef
     function gameOver() {
       gameRunningRef.current = false;
       setIsGameOver(true);
       onGameOver(activeScoreRef.current);
     }
 
-    // Desenare Pătrat Neon (Rămâne la fel)
     function drawRect(x: number, y: number, color: string, glow: boolean = true) {
       if (!ctx) return;
       ctx.fillStyle = color;
@@ -114,18 +103,16 @@ const SnakeGame = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpda
         ctx.shadowBlur = 0;
       }
       ctx.fillRect(x * GRID_SIZE + 1, y * GRID_SIZE + 1, GRID_SIZE - 2, GRID_SIZE - 2);
-      ctx.shadowBlur = 0; // Reset glow
+      ctx.shadowBlur = 0;
     }
 
     let lastTime = 0;
 
-    // --- BUCLA PRINCIPALĂ ---
     const loop = (timestamp: number) => {
       if (!gameRunningRef.current) return;
 
       const deltaTime = timestamp - lastTime;
 
-      // Actualizăm logica doar la intervalul definit (GAME_SPEED)
       if (deltaTime >= GAME_SPEED) {
         lastTime = timestamp;
 
@@ -133,28 +120,26 @@ const SnakeGame = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpda
         head.x += directionRef.current.x;
         head.y += directionRef.current.y;
 
-        // 2. Verificare Coliziuni (Pereți)
+        // check wall-collision
         if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) {
           gameOver();
           return; 
         }
 
-        // 3. Verificare Coliziuni (Coada)
+        // check self-collision
         if (snakeRef.current.some(seg => seg.x === head.x && seg.y === head.y)) {
           gameOver();
           return;
         }
 
-        // 4. Mișcare Șarpe
+        // snake movement
         snakeRef.current.unshift(head); 
 
-        // 5. Verificare Mâncare
         if (head.x === foodRef.current.x && head.y === foodRef.current.y) {
-          // MODIFICARE: Folosim activeScoreRef și onScoreUpdate
           activeScoreRef.current += 10;
           setUiScore(activeScoreRef.current);
           if (onScoreUpdate) {
-            onScoreUpdate(); // Notifică CrazyMode pentru actualizarea totală
+            onScoreUpdate(); 
           }
           spawnFood();
         } else {
@@ -162,7 +147,6 @@ const SnakeGame = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpda
         }
       }
 
-      // --- DESENARE (Rămâne la fel) ---
       ctx.fillStyle = '#050510';
       ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
@@ -189,9 +173,8 @@ const SnakeGame = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpda
       gameRunningRef.current = false;
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [externalScoreRef, activeScoreRef, onScoreUpdate]); // Dependențe adăugate
+  }, [externalScoreRef, activeScoreRef, onScoreUpdate]); 
 
-  // Stiluri CSS inline pentru containere (Rămân la fel)
   const uiBarStyle: React.CSSProperties = {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     width: `${CANVAS_WIDTH}px`, margin: '0 auto 20px auto',
@@ -205,7 +188,6 @@ const SnakeGame = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpda
     <RetroBackground>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
         
-        {/* Bara UI */}
         <div style={uiBarStyle}>
           <h3 style={{ margin: 0, textShadow: `0 0 10px ${NeonColors.GREEN}` }}>SNAKE SCORE: {uiScore}</h3>
           <RetroButton variant="green" onClick={onExit} style={{ width: 'auto', marginTop: 0, padding: '10px 20px' }}>
@@ -213,7 +195,6 @@ const SnakeGame = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpda
           </RetroButton>
         </div>
 
-        {/* Canvas Container */}
         <div style={{ 
             position: 'relative', 
             border: `4px solid ${NeonColors.GREEN}`,
@@ -227,7 +208,6 @@ const SnakeGame = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpda
             style={{ display: 'block' }}
           />
 
-          {/* Ecran Game Over */}
           {isGameOver && (
             <div style={{
               position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',

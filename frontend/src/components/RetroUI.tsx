@@ -1,7 +1,6 @@
 // src/components/RetroUI.tsx
 import { type ReactNode, type CSSProperties, type ButtonHTMLAttributes } from 'react';
 
-// --- CULORI NEON STANDARD ---
 export const NeonColors = {
   CYAN: '#0ff',
   PINK: '#f0f',
@@ -10,7 +9,6 @@ export const NeonColors = {
   GREEN: '#0f0'
 };
 
-// --- STILURI CSS INJECTATE PENTRU HOVER ---
 const retroGlobalStyles = `
   .retro-btn { transition: all 0.2s ease-in-out; }
   .retro-btn:hover:not(:disabled) { transform: scale(1.05); }
@@ -23,7 +21,6 @@ const retroGlobalStyles = `
   .glow-green:hover:not(:disabled) { background: ${NeonColors.GREEN}; color: #000; box-shadow: 0 0 20px ${NeonColors.GREEN}; }`
 ;
 
-// Injectăm stilul doar o dată
 if (typeof document !== 'undefined' && !document.getElementById('retro-ui-styles')) {
   const style = document.createElement('style');
   style.id = 'retro-ui-styles';
@@ -31,7 +28,6 @@ if (typeof document !== 'undefined' && !document.getElementById('retro-ui-styles
   document.head.appendChild(style);
 }
 
-// --- 1. RETRO CONTAINER (Fundal Pagina) ---
 export const RetroContainer = ({ children }: { children: ReactNode }) => (
   <div style={{
     minHeight: '100vh',
@@ -47,7 +43,6 @@ export const RetroContainer = ({ children }: { children: ReactNode }) => (
   </div>
 );
 
-// --- 2. RETRO CARD (Cutiile jocurilor) ---
 interface CardProps {
   children: ReactNode;
   color?: string;
@@ -68,7 +63,7 @@ export const RetroCard = ({ children, color = NeonColors.CYAN, style }: CardProp
   </div>
 );
 
-// --- 3. RETRO BUTTON (Butoanele) ---
+// button
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'cyan' | 'pink' | 'red' | 'yellow' | 'green';
 }
@@ -107,7 +102,7 @@ export const RetroButton = ({ children, variant = 'cyan', style, disabled, ...pr
   );
 };
 
-// --- 4. RETRO TEXT (Titluri strălucitoare) ---
+// text retro
 export const RetroTitle = ({ children, color = NeonColors.CYAN, size = '24px' }: { children: ReactNode, color?: string, size?: string }) => (
   <h1 style={{
     color: color,

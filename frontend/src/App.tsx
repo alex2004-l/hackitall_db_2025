@@ -5,14 +5,14 @@ import { auth, db } from "./firebaseClient";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import ProtectedRoute from "./ProtectedRoute";
 
-// Importăm paginile
+// import pages
 import HomePage from "./pages/HomePage";
 import Login from "./pages/Login";
 import MainPage from "./pages/MainPage";
 import Chicken from "./pages/Chicken";
 import Snake from "./pages/Snake";
 import Profile from "./pages/Profile";
-import Dino from "./pages/Dino"; // <--- 1. IMPORT NOU PENTRU DINO RUN
+import Dino from "./pages/Dino"; 
 import CrazyMode from "./pages/CrazyMode";
 import Leaderboard from "./pages/Leaderboard";
 import PublicProfile from "./pages/PublicProfile";
@@ -42,13 +42,11 @@ function App() {
     return unsubscribe;
   }, []);
 
-  // Logică Start din Home Page
   const handleStart = useCallback(() => {
     if (user) navigate("/dashboard");
     else navigate("/login");
   }, [navigate, user]);
 
-  // Logică Salvare Scor - CHICKEN INVADERS
   const handleGameOver = useCallback(async (score: number) => {
     const currentUser = auth.currentUser;
     if (currentUser) {
@@ -73,7 +71,6 @@ function App() {
 
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: '#00ff66', fontFamily: '"Press Start 2P", monospace' }}>Loading...</div>;
   
-  // Handler pentru salvare scor Snake
   const handleSnakeGameOver = async (score: number) => {
     const user = auth.currentUser;
     if (user) {
@@ -82,7 +79,7 @@ function App() {
           uid: user.uid,
           email: user.email,
           score: score,
-          game: "snake", // Specificăm jocul
+          game: "snake", 
           createdAt: serverTimestamp()
         });
         alert("Snake score saved!");
@@ -95,7 +92,6 @@ function App() {
     }
   };
   
-  // --- 2. HANDLER NOU PENTRU DINO RUN ---
   const handleDinoGameOver = async (score: number) => {
     const user = auth.currentUser;
     if (user) {
@@ -104,7 +100,7 @@ function App() {
           uid: user.uid,
           email: user.email,
           score: score,
-          game: "dino", // Specificăm jocul
+          game: "dino", 
           createdAt: serverTimestamp()
         });
         alert("Dino score saved!");
@@ -124,8 +120,8 @@ function App() {
             uid: user.uid,
             email: user.email,
             score: finalScore,
-            game: "crazymode", // Identificator mod
-            lost_on: gameId,   // Jocul la care a pierdut
+            game: "crazymode", 
+            lost_on: gameId, 
             createdAt: serverTimestamp()
         });
         alert(`Crazy Mode finished! Total Score: ${finalScore}`);
@@ -140,11 +136,9 @@ function App() {
       <Route path="/" element={<HomePage onStart={handleStart} />} />
       <Route path="/login" element={<Login />} />
       
-      {/* RUTE PROTEJATE (Vizibile doar dacă userul e logat) */}
       <Route path="/dashboard" element={<ProtectedRoute><MainPage /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
-      {/* RUTA JOCULUI 1: CHICKEN INVADERS */}
       <Route 
         path="/game/chicken" 
         element={
@@ -157,7 +151,6 @@ function App() {
         } 
       />
 
-      {/* RUTA JOCULUI 2: SNAKE */}
       <Route 
         path="/game/snake" 
         element={
@@ -170,13 +163,12 @@ function App() {
         } 
       />
       
-      {/* --- 3. RUTA NOUĂ PENTRU DINO RUN --- */}
       <Route 
         path="/game/dino" 
         element={
           <ProtectedRoute>
-            <Dino // Folosim componenta importată: Dino
-              onGameOver={handleDinoGameOver} // Funcție dedicată de salvare
+            <Dino 
+              onGameOver={handleDinoGameOver}
               onExit={() => navigate("/dashboard")} 
             />
           </ProtectedRoute>

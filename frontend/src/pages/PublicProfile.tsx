@@ -6,10 +6,10 @@ import { db } from '../firebaseClient';
 import { RetroBackground } from '../components/RetroBackground';
 import { RetroCard, RetroTitle, RetroButton, NeonColors } from '../components/RetroUI';
 
-const API_BASE_URL = "http://localhost:5000"; // Pentru poze
+const API_BASE_URL = "http://localhost:5000"; 
 
 const PublicProfile = () => {
-  const { uid } = useParams(); // Luăm ID-ul din URL
+  const { uid } = useParams(); 
   const navigate = useNavigate();
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -18,7 +18,6 @@ const PublicProfile = () => {
     const fetchUser = async () => {
       if (!uid) return;
       try {
-        // Citim datele publice din colecția User
         const docRef = doc(db, "User", uid);
         const docSnap = await getDoc(docRef);
         
@@ -34,7 +33,6 @@ const PublicProfile = () => {
     fetchUser();
   }, [uid]);
 
-  // Calculăm URL-ul imaginii
   const getImgUrl = () => {
     if (!userData?.profilePictureUrl) return null;
     return userData.profilePictureUrl.startsWith('http') 
@@ -53,7 +51,6 @@ const PublicProfile = () => {
             <p style={{ color: NeonColors.YELLOW }}>SCANNING...</p>
           ) : userData ? (
             <>
-              {/* Avatar */}
               <div style={{ 
                 width: '120px', height: '120px', margin: '0 auto 20px',
                 border: `4px solid ${NeonColors.PINK}`, borderRadius: '50%',

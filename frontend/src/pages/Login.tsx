@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../firebaseClient';
-// 1. IMPORTURI NOI PENTRU GOOGLE
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
   signInAnonymously,
-  GoogleAuthProvider,   // <--- Import nou
-  signInWithPopup       // <--- Import nou
+  GoogleAuthProvider,   
+  signInWithPopup    
 } from 'firebase/auth';
 
 import { RetroBackground } from '../components/RetroBackground';
@@ -25,7 +24,6 @@ function Login() {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // --- LOGICA DE AUTH ---
   const handleLogin = async () => {
     if (!email || !password) { setMessage('Please enter email and password'); return; }
     setLoading(true); setMessage('');
@@ -48,7 +46,6 @@ function Login() {
     finally { setLoading(false); }
   };
 
-  // 2. HANDLER NOU PENTRU GOOGLE
   const handleGoogleLogin = async () => {
     setLoading(true); setMessage('');
     try {
@@ -120,7 +117,6 @@ function Login() {
               style={inputStyle}
             />
             
-            {/* Butoane Email/Pass */}
             <div style={{ display: 'flex', gap: '15px', marginTop: '10px' }}>
               <RetroButton variant="cyan" onClick={handleLogin} disabled={loading}>
                 {loading ? '...' : 'LOG IN'}
@@ -130,7 +126,6 @@ function Login() {
               </RetroButton>
             </div>
 
-            {/* 3. BUTONUL DE GOOGLE (Adăugat aici) */}
             <div style={{ marginTop: '15px' }}>
               <RetroButton variant="green" onClick={handleGoogleLogin} disabled={loading}>
                 LOGIN WITH GOOGLE

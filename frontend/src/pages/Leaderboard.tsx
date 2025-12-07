@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-// Importăm doc și getDoc pentru a lua datele actualizate despre user
 import { collection, query, where, orderBy, limit, getDocs, doc, getDoc } from 'firebase/firestore'; 
 // @ts-ignore
 import { db } from '../firebaseClient';
@@ -10,8 +9,8 @@ import { RetroCard, RetroTitle, RetroButton, NeonColors } from '../components/Re
 interface ScoreEntry {
   id: string;
   email?: string;
-  username?: string; // Numele din momentul scorului (fallback)
-  realUsername?: string; // Numele ACTUAL din profil
+  username?: string;
+  realUsername?: string;
   score: number;
   game?: string;
   uid?: string;
@@ -26,8 +25,7 @@ const Leaderboard = () => {
   useEffect(() => {
     const fetchScores = async () => {
       try {
-        // 1. Cerem mai multe rezultate (100) pentru a avea de unde filtra duplicatele
-        // și pe cei unknown, ca să rămânem cu un Top 20 curat.
+        // request 100 results and filter them
         const q = query(
           collection(db, "scores"),
           where("game", "==", "crazymode"),
@@ -38,30 +36,25 @@ const Leaderboard = () => {
         const snapshot = await getDocs(q);
         
         const uniqueScores: ScoreEntry[] = [];
-        const seenUsers = new Set<string>(); // Set pentru a ține minte cine a fost deja adăugat
-
-        // 2. Procesare și Filtrare
+        const seenUsers = new Set<string>();
+        
         for (const docSnap of snapshot.docs) {
           const data = docSnap.data();
-          const userId = data.uid || data.email; // Identificator unic
+          const userId = data.uid || data.email;
 
-          // A. Filtru de siguranță: Sărim peste intrările fără ID
           if (!userId) continue;
 
-          // B. Filtru UNICITATE: Dacă am mai adăugat acest user, sărim peste (reținem doar primul scor, care e MAXIM)
           if (seenUsers.has(userId)) continue;
 
-          // C. Filtru "UNKNOWN": Verificăm dacă numele e valid
           let candidateName = data.username;
           if (!candidateName && data.email) candidateName = data.email.split('@')[0];
           
           if (!candidateName || 
               candidateName.toLowerCase().includes("unknown") || 
               candidateName.toLowerCase().includes("anon")) {
-            continue; // Sărim peste jucătorii anonimi sau fără nume
+            continue;
           }
 
-          // Dacă trece toate filtrele, îl marcăm ca văzut și îl adăugăm
           seenUsers.add(userId);
 
           uniqueScores.push({
@@ -73,18 +66,14 @@ const Leaderboard = () => {
           });
         }
 
-        // Tăiem lista finală la top 20
         const top20 = uniqueScores.slice(0, 20);
 
-        // 3. FETCH SECUNDAR: Luăm numele actuale din colecția "User" (Profil)
-        // Facem asta doar pentru cei 20 rămași, nu pentru toți 100
         const enrichedScores = await Promise.all(top20.map(async (entry) => {
             if (!entry.uid) return entry;
             try {
                 const userSnap = await getDoc(doc(db, "User", entry.uid));
                 if (userSnap.exists()) {
                     const userData = userSnap.data();
-                    // Actualizăm numele dacă utilizatorul l-a schimbat în profil
                     return { ...entry, realUsername: userData.username };
                 }
             } catch (e) {
@@ -110,10 +99,9 @@ const Leaderboard = () => {
     fetchScores();
   }, []);
 
-  // Alegem numele cel mai bun pentru afișare
   const getDisplayName = (entry: ScoreEntry) => {
-    if (entry.realUsername) return entry.realUsername; // Numele actual din profil
-    if (entry.username) return entry.username; // Numele vechi de la scor
+    if (entry.realUsername) return entry.realUsername;
+    if (entry.username) return entry.username; 
     return "PLAYER";
   };
 
@@ -159,7 +147,6 @@ const Leaderboard = () => {
                       return (
                         <tr 
                           key={entry.id} 
-                          // Facem rândul clickabil pentru a vedea profilul
                           onClick={() => entry.uid && navigate(`/profile/${entry.uid}`)}
                           style={{ 
                             color: rowColor, 

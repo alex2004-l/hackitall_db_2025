@@ -3,10 +3,8 @@ import { RetroBackground } from '../components/RetroBackground';
 import { RetroButton, NeonColors } from '../components/RetroUI';
 import dinoAsset from '../assets/dino.png';
 
-// Array of neon colors for sprite randomization
 const SPRITE_COLORS = ['00ff00', 'ff00ff', '00ffff', 'ffff00', 'ff0000'];
 
-// Function to generate sprite SVG with random color
 const generateCactusSVG = (color: string) => 
   `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect fill='%23${color}' x='14' y='4' width='4' height='28'/%3E%3Crect fill='%23${color}' x='18' y='10' width='4' height='4'/%3E%3Crect fill='%23${color}' x='10' y='18' width='4' height='4'/%3E%3C/svg%3E`;
 
@@ -29,7 +27,6 @@ const CACTUS_WIDTH = 60;
 const PTERO_HEIGHT = 80;
 const PTERO_WIDTH = 130;
 
-// --- TIPARE ---
 type ScoreRef = {
     current: number;
 };
@@ -37,28 +34,24 @@ type ScoreRef = {
 type GameProps = {
   onGameOver: (score: number) => void;
   onExit: () => void;
-  scoreRef?: ScoreRef; // Ref-ul de scor din Crazy Mode (opțional)
-  onScoreUpdate?: () => void; // Callback pentru actualizarea scorului total
+  scoreRef?: ScoreRef;
+  onScoreUpdate?: () => void;
 };
 
-// MODIFICARE: Destructurare prop-uri și definire Refs
 const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }: GameProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Ref-uri pentru Logică
-  const localScoreRef = useRef(0); // Ref local (fallback)
-  const activeScoreRef = externalScoreRef || localScoreRef; // Ref-ul care va fi folosit
+  const localScoreRef = useRef(0);
+  const activeScoreRef = externalScoreRef || localScoreRef; 
   
   const dinoYRef = useRef(GROUND_Y - DINO_SIZE);
   const velocityYRef = useRef(0);
   const isJumpingRef = useRef(false);
   const gameRunningRef = useRef(true);
 
-  // Stare UI
   const [uiScore, setUiScore] = useState(0);
   const [isGameOver, setIsGameOver] = useState(false);
 
-  // Sprite Refs
   const dinoImgRef = useRef(new Image());
   const cactusImgRef = useRef(new Image());
   const pteroImgRef = useRef(new Image());
@@ -71,7 +64,6 @@ const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Use the provided PNG asset for the dino graphic
     dinoImgRef.current.src = dinoAsset;
     ctx.imageSmoothingEnabled = false; 
 
@@ -91,7 +83,6 @@ const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
     let obstacleTimer = 0;
     let obstacleInterval = 90; 
     
-    // Array of neon colors for randomization
     const spriteColors = [NeonColors.PINK, NeonColors.CYAN, NeonColors.GREEN, NeonColors.YELLOW, NeonColors.RED];
     
     let obstacles: { x: number, y: number, w: number, h: number, type: 'cactus' | 'ptero', color: string, spriteSrc: string }[] = [];
@@ -138,7 +129,7 @@ const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
       
       const baseSpeed = 5;
       const maxSpeedIncrease = 3;
-      const currentObstacleSpeed = baseSpeed + (maxSpeedIncrease * difficultyFactor); // VITEZA DINAMICĂ
+      const currentObstacleSpeed = baseSpeed + (maxSpeedIncrease * difficultyFactor); 
 
       const maxDelay = 140; 
       const minDelay = 60;
@@ -159,7 +150,7 @@ const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
         }
       }
       
-      // 3. Spawnează Obstacole
+      // spawn obstacles
       if (obstacleTimer++ > obstacleInterval) {
         
         obstacleInterval = minDelay + Math.random() * (currentMaxInterval - minDelay);
@@ -180,12 +171,11 @@ const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
         obstacleTimer = 0;
       }
       
-      // 4. Mișcă și Desenează Obstacole
+      // move and draw obstacles
       for (let i = obstacles.length - 1; i >= 0; i--) {
         const obs = obstacles[i];
-        obs.x -= currentObstacleSpeed; // APLICĂ VITEZA DINAMICĂ
+        obs.x -= currentObstacleSpeed;
 
-        // Create or get image for this sprite
         if (!('img' in obs)) {
           const img = new Image();
           img.src = obs.spriteSrc;
@@ -194,23 +184,21 @@ const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
         const img = (obs as any).img;
         drawGlowingSprite(img, obs.x, obs.y, obs.w, obs.h, obs.color, 15);
 
-        // Curăță obstacolele ieșite din ecran
+        // delete off-screen obstacles
         if (obs.x + obs.w < 0) {
           obstacles.splice(i, 1);
           
-          // [2] SCORARE: Folosim activeScoreRef și notificăm părintele
           activeScoreRef.current += 1; 
           setUiScore(activeScoreRef.current);
           if (onScoreUpdate) { 
-              onScoreUpdate(); // Notifică CrazyMode
+              onScoreUpdate();
           }
         }
 
-        // 5. Verificare Coliziune
+        // check collisions
         const dinoX = 20; 
         const dinoY = dinoYRef.current;
         
-        // Add collision padding for smoother gameplay
         const COLLISION_PADDING = 5;
 
         if (
@@ -224,10 +212,10 @@ const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
         }
       }
 
-      // 6. Desenare Dino
+      // draw dino
       drawGlowingSprite(dinoImgRef.current, 50, dinoYRef.current, DINO_SIZE, DINO_SIZE, NeonColors.GREEN, 25);
 
-      // 7. Desenare Sol
+      // draw ground
       ctx.strokeStyle = NeonColors.GREEN;
       ctx.lineWidth = 4;
       ctx.beginPath();
@@ -262,7 +250,7 @@ const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
     <RetroBackground>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
         
-        {/* Bara UI */}
+        {/* UI bar */}
         <div style={uiBarStyle}>
           <h3 style={{ margin: 0, textShadow: `0 0 10px ${NeonColors.GREEN}` }}>DINO SCORE: {uiScore}</h3>
           <RetroButton variant="green" onClick={onExit} style={{ width: 'auto', marginTop: 0, padding: '10px 20px' }}>

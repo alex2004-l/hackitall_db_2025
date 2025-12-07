@@ -106,7 +106,6 @@ const Profile: React.FC = () => {
     const formData = new FormData();
     formData.append("profilePicture", file);
     
-    // --- TRIMITEM MEREU "true" CA SĂ ACTIVĂM PIXELAREA AUTOMATĂ ---
     formData.append("use_ai", "true"); 
 
     try {

@@ -1,12 +1,12 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter } from 'react-router-dom' // <--- Importăm aici Router-ul
+import { BrowserRouter } from 'react-router-dom' 
 import './index.css'
-import App from './App.tsx' // (sau .jsx, depinde cum l-ai numit, VS Code îl găsește)
+import App from './App.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter> {/* <--- Îl punem AICI, să învelească toată aplicația */}
+    <BrowserRouter> 
       <App />
     </BrowserRouter>
   </StrictMode>,
