@@ -68,7 +68,8 @@ const MainPage = () => {
           HELLO, {!loading && profile.username ? profile.username.toUpperCase() : 'ANONYMUS'}!
         </p>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '30px', maxWidth: '900px', margin: '0 auto' }}>
+        {/* Updated Grid to support more items */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px', maxWidth: '1000px', margin: '0 auto' }}>
           
           {/* CARD 1: Chicken Invaders (Cyan) */}
           <RetroCard color={NeonColors.CYAN}>
@@ -106,7 +107,7 @@ const MainPage = () => {
             <RetroButton variant="yellow" onClick={() => navigate('/game/dino')}>START GAME</RetroButton>
           </RetroCard>
 
-          {/* CARD 4: Crazy Mode (RED) - NEW */}
+          {/* CARD 4: Crazy Mode (RED) */}
           <RetroCard color={NeonColors.RED}>
             <RetroTitle size="18px" color={NeonColors.RED}>CRAZY MODE</RetroTitle>
             <div style={{ fontSize: '50px', margin: '20px' }}>🔥</div>
@@ -116,6 +117,18 @@ const MainPage = () => {
             </p>
             
             <RetroButton variant="red" onClick={() => navigate('/crazy-mode')}>START CRAZY MODE</RetroButton>
+          </RetroCard>
+
+          {/* CARD 5: Multiplayer (GREEN) - NEW */}
+          <RetroCard color={NeonColors.GREEN}>
+            <RetroTitle size="18px" color={NeonColors.GREEN}>MULTIPLAYER</RetroTitle>
+            <div style={{ fontSize: '50px', margin: '20px' }}>⚔️</div>
+            
+            <p style={descriptionStyle(NeonColors.GREEN)}>
+              Challenge a friend in real-time Snake arena!
+            </p>
+            
+            <RetroButton variant="green" onClick={() => navigate('/multiplayer')}>ENTER LOBBY</RetroButton>
           </RetroCard>
 
         </div>

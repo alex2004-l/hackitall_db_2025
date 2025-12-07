@@ -16,6 +16,8 @@ import Dino from "./pages/Dino";
 import CrazyMode from "./pages/CrazyMode";
 import Leaderboard from "./pages/Leaderboard";
 import PublicProfile from "./pages/PublicProfile";
+import MultiplayerLobby from "./pages/MultiplayerLobby";
+import SnakeMulti from "./pages/SnakeMulti";
 
 async function checkAuth() {
   const user = auth.currentUser;
@@ -201,7 +203,11 @@ function App() {
           </ProtectedRoute>
         } 
       />
+
+      <Route path="/multiplayer" element={<ProtectedRoute><MultiplayerLobby /></ProtectedRoute>} />
+      <Route path="/game/snake-multi/:roomId" element={<ProtectedRoute><SnakeMulti /></ProtectedRoute>} />
     </Routes>
+    
   );
 }
 
