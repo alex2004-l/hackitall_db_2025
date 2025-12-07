@@ -55,6 +55,8 @@ const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
   const dinoImgRef = useRef(new Image());
   const cactusImgRef = useRef(new Image());
   const pteroImgRef = useRef(new Image());
+
+  const textGlow = (color: string) => `0 0 5px ${color}, 0 0 10px ${color}, 0 0 20px ${color}`;
   
   const BG_COLOR = '#050510'; 
 
@@ -95,9 +97,9 @@ const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
 
     const endGame = () => {
       gameRunningRef.current = false;
-      setIsGameOver(true);
       cancelAnimationFrame(animationId);
-      onGameOver(activeScoreRef.current); 
+      onGameOver(activeScoreRef.current);
+      setIsGameOver(true);
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -127,7 +129,7 @@ const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
       const maxDifficultyScore = 1000.0;
       const difficultyFactor = Math.min(1, activeScoreRef.current / maxDifficultyScore); 
       
-      const baseSpeed = 5;
+      const baseSpeed = 3;
       const maxSpeedIncrease = 3;
       const currentObstacleSpeed = baseSpeed + (maxSpeedIncrease * difficultyFactor); 
 
@@ -277,11 +279,15 @@ const Dino = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
               backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column', 
               justifyContent: 'center', alignItems: 'center', backdropFilter: 'blur(5px)'
             }}>
-              <h1 style={{ color: NeonColors.RED, fontSize: '40px', textShadow: `0 0 20px ${NeonColors.RED}`, marginBottom: '20px' }}>GAME OVER</h1>
-              <p style={{ color: 'white', fontFamily: '"Press Start 2P"', marginBottom: '30px' }}>Final Score: {uiScore}</p>
-              <RetroButton variant="green" onClick={() => onGameOver(activeScoreRef.current)}>
-                💾 SAVE SCORE
-              </RetroButton>
+
+              <h1 style={{ color: NeonColors.RED, fontSize: '45px', margin: '0 0 30px 0', textShadow: textGlow(NeonColors.RED) }}>GAME OVER</h1>
+              <p style={{ fontSize: '22px', color: '#fff', margin: '0 0 40px 0', textShadow: textGlow('#fff') }}>Final Score: {uiScore}</p>
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+                <RetroButton variant="yellow" onClick={() => onExit()}>
+                  ⬅️ BACK
+                </RetroButton>
+              </div>
             </div>
           )}
         </div>

@@ -60,13 +60,11 @@ function App() {
           game: "chicken_invaders",
           createdAt: serverTimestamp()
         });
-        alert("Score saved!");
         navigate("/dashboard");
       } catch (e) {
         console.error(e);
       }
     } else {
-      alert("You are not logged in!");
       navigate("/login");
     }
   }, [navigate]);
@@ -84,7 +82,6 @@ function App() {
           game: "snake", 
           createdAt: serverTimestamp()
         });
-        alert("Snake score saved!");
         navigate("/dashboard");
       } catch (e) {
         console.error(e);
@@ -105,7 +102,6 @@ function App() {
           game: "dino", 
           createdAt: serverTimestamp()
         });
-        alert("Dino score saved!");
         navigate("/dashboard");
       } catch (e) {
         console.error(e);
@@ -126,7 +122,6 @@ function App() {
             lost_on: gameId, 
             createdAt: serverTimestamp()
         });
-        alert(`Crazy Mode finished! Total Score: ${finalScore}`);
         navigate("/dashboard");
     } else {
         navigate("/login");

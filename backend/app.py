@@ -96,7 +96,7 @@ def firebase_token_required(f):
 @app.route("/profile/init", methods=["POST"])
 @firebase_token_required
 def init_profile():
-    user_uid = request.user["uid"]
+    user_uid   = request.user["uid"]
     user_email = request.user.get("email", "player")
     print(f"Initializing profile for user: {user_uid}")
 
@@ -107,6 +107,7 @@ def init_profile():
         profile_doc = profile_ref.get()
         
         if not profile_doc.exists:
+            print(user_email.split("@")[0])
             default_username = user_email.split("@")[0] if user_email else "ArcadePlayer"
 
             profile_ref.set({

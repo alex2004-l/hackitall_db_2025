@@ -52,8 +52,6 @@ const MultiplayerLobby = () => {
         }
       });
       navigate(`/game/snake-multi/${roomIdInput}?role=guest`);
-    } else {
-      alert("Camera nu există sau e plină!");
     }
   };
 
@@ -64,16 +62,16 @@ const MultiplayerLobby = () => {
           <RetroTitle size="20px">MULTIPLAYER LOBBY</RetroTitle>
           
           <RetroButton variant="cyan" onClick={createRoom}>
-            CREEAZĂ CAMERĂ NOUĂ
+            CREATE A ROOM
           </RetroButton>
 
           <hr style={{ borderColor: NeonColors.CYAN, margin: '20px 0', opacity: 0.5 }} />
 
-          <p style={{ color: '#fff', fontSize: '10px' }}>SAU INTRĂ ÎN UNA EXISTENTĂ:</p>
+          <p style={{ color: '#fff', fontSize: '10px' }}>ADD CODE FOR AN EXISTING ROOM:</p>
           <input 
             value={roomIdInput}
             onChange={(e) => setRoomIdInput(e.target.value)}
-            placeholder="Introdu ID Cameră..."
+            placeholder="Enter Room ID..."
             style={{ padding: '10px', width: '80%', background: '#000', color: '#fff', border: '1px solid cyan', fontFamily: 'inherit', marginBottom: '10px' }}
           />
           <RetroButton variant="pink" onClick={joinRoom}>
@@ -81,7 +79,7 @@ const MultiplayerLobby = () => {
           </RetroButton>
           
           <div style={{marginTop: 20}}>
-            <RetroButton variant="yellow" onClick={() => navigate('/dashboard')}>ÎNAPOI</RetroButton>
+            <RetroButton variant="yellow" onClick={() => navigate('/dashboard')}>BACK</RetroButton>
           </div>
         </RetroCard>
       </div>

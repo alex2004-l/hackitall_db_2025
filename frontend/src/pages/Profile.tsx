@@ -15,7 +15,7 @@ interface ProfileData {
 const NEON = "#00ff66";
 const ACCENT = "#ff33cc";
 
-const DEFAULT_PICTURE = "../../../backend/static/system_defaults/user.jpg"; 
+const DEFAULT_PICTURE = "/static/system_defaults/user.jpg"; 
 
 const Profile: React.FC = () => {
   const navigate = useNavigate();
@@ -134,9 +134,29 @@ const Profile: React.FC = () => {
   };
 
   // Image URL Calculation
-  const fullImageUrl = profile.profilePictureUrl
-    ? (profile.profilePictureUrl.startsWith('http') ? profile.profilePictureUrl : API_BASE_URL + profile.profilePictureUrl)
-    : API_BASE_URL + DEFAULT_PICTURE;
+  const fullImageUrl = (() => {
+    const imageUrl = profile.profilePictureUrl;
+    
+    // 1. Check if the URL is absolute (http/https)
+    if (imageUrl.startsWith('http')) {
+      console.log("Loading Absolute URL:", imageUrl); // <-- LOG 1
+      return imageUrl;
+    }
+    
+    // 2. Check if the URL is relative (i.e., provided by the backend)
+    if (imageUrl) {
+      // Construct the absolute URL from the base API and the relative path
+      const path = imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`;
+      const finalUrl = API_BASE_URL + path;
+      console.log("Loading Relative URL (Backend):", finalUrl); // <-- LOG 2
+      return finalUrl;
+    }
+    
+    // 3. Fallback to local default picture (for initial state or true missing data)
+    const fallbackUrl = API_BASE_URL + DEFAULT_PICTURE;
+    console.log("Loading Default Fallback URL:", fallbackUrl); // <-- LOG 3
+    return fallbackUrl;
+  })();
 
   if (!authStatus.resolved || loading) {
     return (

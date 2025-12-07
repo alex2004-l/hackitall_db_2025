@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { RetroBackground } from '../components/RetroBackground';
+import { RetroButton } from '../components/RetroUI';
 
 // import font
 const fontLink = document.createElement('link');
@@ -312,9 +313,12 @@ const Game = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpdate }:
             }}>
               <h1 style={{ color: NEON_RED, fontSize: '45px', margin: '0 0 30px 0', textShadow: textGlow(NEON_RED) }}>GAME OVER</h1>
               <p style={{ fontSize: '22px', color: '#fff', margin: '0 0 40px 0', textShadow: textGlow('#fff') }}>Final Score: {uiScore}</p>
-              <button onClick={() => onGameOver(activeScoreRef.current)} style={{...buttonStyle(NEON_YELLOW), fontSize: '16px', padding: '15px 30px', backgroundColor: 'rgba(255, 255, 0, 0.2)'}}>
-                💾 SALVEAZĂ SCOR
-              </button>
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+                <RetroButton variant="yellow" onClick={() => onExit()}>
+                  ⬅️ BACK
+                </RetroButton>
+              </div>
             </div>
           )}
         </div>

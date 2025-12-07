@@ -34,6 +34,28 @@ function Login() {
     finally { setLoading(false); }
   };
 
+  const initializeProfile = async () => {
+    const user = auth.currentUser;
+    if (!user) throw new Error("User not authenticated for profile initialization.");
+
+    const idToken = await user.getIdToken();
+
+    const response = await fetch('http://localhost:5000/profile/init', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${idToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Profile initialization failed: ${errorData.message || response.statusText}`);
+    }
+    
+    return await response.json();
+  };
+
   const handleRegister = async () => {
     if (!email || !password) { setMessage('Please enter email and password'); return; }
     setLoading(true); setMessage('');
@@ -41,6 +63,7 @@ function Login() {
       await createUserWithEmailAndPassword(auth, email, password);
       setMessage("Account created! Logging in...");
       await signInWithEmailAndPassword(auth, email, password);
+      await initializeProfile();
       navigate('/dashboard');
     } catch (e: any) { setMessage(e.message); } 
     finally { setLoading(false); }
@@ -51,6 +74,7 @@ function Login() {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
+      await initializeProfile();
       navigate('/dashboard');
     } catch (e: any) { setMessage(e.message); } 
     finally { setLoading(false); }

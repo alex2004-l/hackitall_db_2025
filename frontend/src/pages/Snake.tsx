@@ -41,6 +41,8 @@ const SnakeGame = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpda
   const [uiScore, setUiScore] = useState(0);
   const [isGameOver, setIsGameOver] = useState(false);
 
+  const textGlow = (color: string) => `0 0 5px ${color}, 0 0 10px ${color}, 0 0 20px ${color}`;
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -263,22 +265,25 @@ const SnakeGame = ({ onGameOver, onExit, scoreRef: externalScoreRef, onScoreUpda
           />
 
           {isGameOver && (
-            <div style={{
-              position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-              backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column', 
-              justifyContent: 'center', alignItems: 'center', backdropFilter: 'blur(5px)'
-            }}>
-              <h1 style={{ color: NeonColors.RED, fontSize: '40px', textShadow: `0 0 20px ${NeonColors.RED}`, marginBottom: '20px' }}>GAME OVER</h1>
-              <p style={{ color: 'white', fontFamily: '"Press Start 2P"', marginBottom: '30px' }}>Scor Final: {uiScore}</p>
-              <RetroButton variant="green" onClick={() => onGameOver(activeScoreRef.current)}>
-                💾 SALVEAZĂ SCOR
-              </RetroButton>
-            </div>
-          )}
+          <div style={{
+            position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+            backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column', 
+            justifyContent: 'center', alignItems: 'center', backdropFilter: 'blur(5px)'
+          }}>
+            <h1 style={{ color: NeonColors.RED, fontSize: '45px', margin: '0 0 30px 0', textShadow: textGlow(NeonColors.RED) }}>GAME OVER</h1>
+              <p style={{ fontSize: '22px', color: '#fff', margin: '0 0 40px 0', textShadow: textGlow('#fff') }}>Final Score: {uiScore}</p>
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+                <RetroButton variant="yellow" onClick={() => onExit()}>
+                  ⬅️ BACK
+                </RetroButton>
+              </div>
+          </div>
+        )}
         </div>
 
         <p style={{ color: '#aaa', marginTop: '20px', fontFamily: '"Press Start 2P"', fontSize: '10px' }}>
-          ⬆️⬇️⬅️➡️ pentru a controla șarpele
+          ⬆️⬇️⬅️➡️ FOR CONTROLLING THE SNAKE MOVEMENT
         </p>
       </div>
     </RetroBackground>
