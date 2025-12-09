@@ -113,7 +113,7 @@ const MainPage = () => {
             <div style={{ fontSize: '50px', margin: '20px' }}>🔥</div>
             
             <p style={descriptionStyle(NeonColors.RED)}>
-              Extreme mode: games change every 30 seconds!
+              Extreme mode: games change every 10 seconds!
             </p>
             
             <RetroButton variant="red" onClick={() => navigate('/crazy-mode')}>START CRAZY MODE</RetroButton>

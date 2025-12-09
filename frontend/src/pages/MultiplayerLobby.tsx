@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, addDoc, setDoc, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '../firebaseClient';
 import { RetroBackground } from '../components/RetroBackground';
 import { RetroCard, RetroButton, RetroTitle, NeonColors } from '../components/RetroUI';
